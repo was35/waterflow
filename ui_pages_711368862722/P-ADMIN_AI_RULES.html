@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI筛选规则设置 - 水脉通</title>
+    <script src="https://unpkg.byted-static.com/coze/space_ppt_lib/1.0.3-alpha.12/lib/tailwindcss.js"></script>
+    <script src="https://unpkg.byted-static.com/fortawesome/fontawesome-free/6.7.2/js/all.min.js" data-auto-replace-svg="nest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#1e40af',
+                        tertiary: '#3b82f6',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        'text-primary': '#1f2937',
+                        'text-secondary': '#6b7280',
+                        'bg-light': '#f8fafc',
+                        'border-light': '#e5e7eb'
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-collapsed {
+            width: 48px;
+        }
+        
+        .sidebar-expanded {
+            width: 200px;
+        }
+        
+        .table-row-hover:hover {
+            background-color: #f9fafb;
+        }
+        
+        .nav-item-active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+        }
+        
+        .search-input-focus:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-enter {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        
+        .modal-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        
+        .rule-type-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .rule-type-keyword {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .rule-type-correlation {
+            background-color: #e0e7ff;
+            color: #5b21b6;
+        }
+        
+        .rule-type-quality {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .rule-type-topic {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body class="bg-bg-light min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header id="top-navbar" class="fixed top-0 left-0 right-0 bg-white border-b border-border-light h-16 z-50">
+        <div class="flex items-center justify-between h-full px-6">
+            <!-- 左侧：Logo和系统名称 -->
+            <div id="navbar-left" class="flex items-center space-x-4">
+                <button id="sidebar-toggle" class="p-2 rounded-lg hover:bg-gray-100 lg:hidden">
+                    <i class="fas fa-bars text-gray-600"></i>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div id="logo" class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-tint text-white text-sm"></i>
+                    </div>
+                    <h1 id="site-title" class="text-xl font-semibold text-text-primary hidden sm:block">水脉通管理系统</h1>
+                </div>
+            </div>
+            
+            <!-- 右侧：管理员信息和退出登录 -->
+            <div id="navbar-right" class="flex items-center space-x-4">
+                <div id="admin-info" class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <span class="text-sm text-text-primary hidden sm:block">管理员</span>
+                </div>
+                <button id="logout-btn" class="px-4 py-2 text-sm text-text-secondary hover:text-danger border border-border-light rounded-lg hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt mr-1"></i>退出登录
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 左侧菜单 -->
+    <aside id="sidebar" class="fixed left-0 top-16 bottom-0 bg-white border-r border-border-light sidebar-expanded transition-all duration-300 z-40">
+        <nav id="sidebar-nav" class="p-4 space-y-2">
+            <a href="#" id="nav-dashboard" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-home w-5"></i>
+                <span class="sidebar-text">后台首页</span>
+            </a>
+            <a href="#" id="nav-category" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-folder w-5"></i>
+                <span class="sidebar-text">资讯类别管理</span>
+            </a>
+            <a href="#" id="nav-update-time" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-clock w-5"></i>
+                <span class="sidebar-text">更新时间设置</span>
+            </a>
+            <a href="#" id="nav-data-source" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-rss w-5"></i>
+                <span class="sidebar-text">数据源配置</span>
+            </a>
+            <a href="#" id="nav-ai-rules" class="flex items-center space-x-3 px-3 py-2 rounded-lg nav-item-active">
+                <i class="fas fa-brain w-5"></i>
+                <span class="sidebar-text">AI筛选规则设置</span>
+            </a>
+            <a href="#" id="nav-users" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-users w-5"></i>
+                <span class="sidebar-text">用户权限管理</span>
+            </a>
+            <a href="#" id="nav-api" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-code w-5"></i>
+                <span class="sidebar-text">API生成与管理</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main id="main-content" class="ml-52 mt-16 p-6 transition-all duration-300">
+        <!-- 页面头部 -->
+        <div id="page-header" class="mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 id="page-title" class="text-2xl font-semibold text-text-primary">AI筛选规则设置</h2>
+                    <nav id="breadcrumb" class="mt-1">
+                        <ol class="flex items-center space-x-2 text-sm text-text-secondary">
+                            <li><a href="#" id="breadcrumb-dashboard" class="hover:text-primary">后台首页</a></li>
+                            <li><i class="fas fa-chevron-right text-xs"></i></li>
+                            <li class="text-text-primary">AI筛选规则设置</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div id="page-actions" class="flex items-center space-x-3">
+                    <button id="add-rule-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary flex items-center space-x-2">
+                        <i class="fas fa-plus text-sm"></i>
+                        <span>新增规则</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工具栏区域 -->
+        <div id="toolbar" class="bg-white rounded-lg shadow-card p-4 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <!-- 搜索框 -->
+                <div id="search-section" class="flex-1 max-w-md">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="keyword-search" 
+                            placeholder="搜索规则名称..." 
+                            class="w-full pl-10 pr-4 py-2 border border-border-light rounded-lg search-input-focus"
+                        >
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary"></i>
+                    </div>
+                </div>
+                
+                <!-- 筛选条件 -->
+                <div id="filter-section" class="flex items-center space-x-3">
+                    <select id="rule-type-filter" class="px-4 py-2 border border-border-light rounded-lg focus:outline-none focus:border-primary">
+                        <option value="">全部类型</option>
+                        <option value="keyword">关键词匹配</option>
+                        <option value="correlation">相关性排序</option>
+                        <option value="quality">内容质量评分</option>
+                        <option value="topic">主题分类</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容展示区域 -->
+        <div id="content-area" class="bg-white rounded-lg shadow-card overflow-hidden mb-6">
+            <!-- 表格头部 -->
+            <div id="table-header" class="px-6 py-4 border-b border-border-light bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="select-all" class="rounded">
+                            <span class="text-sm text-text-secondary">全选</span>
+                        </label>
+                        <span class="text-sm text-text-secondary">共 <span class="font-medium text-text-primary">24</span> 条规则</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="batch-delete" class="px-3 py-1 text-sm text-danger hover:bg-red-50 rounded disabled:opacity-50" disabled>
+                            <i class="fas fa-trash mr-1"></i>批量删除
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 表格内容 -->
+            <div id="table-content" class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-border-light">
+                        <tr>
+                            <th class="w-12 px-6 py-3 text-left">
+                                <input type="checkbox" class="rounded">
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                规则名称 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-32 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                规则类型 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-40 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                创建时间 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-40 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                更新时间 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-32 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                                操作
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="rules-table-body" class="bg-white divide-y divide-border-light">
+                        <!-- AI规则行 1 -->
+                        <tr class="table-row-hover" data-rule-id="rule-001">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">水务政策关键词匹配</h3>
+                                        <p class="text-xs text-text-secondary mt-1">包含"水务政策"、"水资源管理"、"水利法规"等关键词</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="rule-type-badge rule-type-keyword">关键词匹配</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-10 14:30
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-15 09:15
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-rule-btn text-primary hover:text-secondary text-sm" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-rule-btn text-danger hover:text-red-700 text-sm" title="删除">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- AI规则行 2 -->
+                        <tr class="table-row-hover" data-rule-id="rule-002">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">技术创新相关性排序</h3>
+                                        <p class="text-xs text-text-secondary mt-1">基于技术创新相关度进行智能排序</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="rule-type-badge rule-type-correlation">相关性排序</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-08 16:45
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-14 11:20
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-rule-btn text-primary hover:text-secondary text-sm" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-rule-btn text-danger hover:text-red-700 text-sm" title="删除">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- AI规则行 3 -->
+                        <tr class="table-row-hover" data-rule-id="rule-003">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">内容质量评分标准</h3>
+                                        <p class="text-xs text-text-secondary mt-1">基于内容完整性、专业性、时效性评分</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="rule-type-badge rule-type-quality">内容质量评分</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-05 10:20
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-13 15:30
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-rule-btn text-primary hover:text-secondary text-sm" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-rule-btn text-danger hover:text-red-700 text-sm" title="删除">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- AI规则行 4 -->
+                        <tr class="table-row-hover" data-rule-id="rule-004">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">主题自动分类规则</h3>
+                                        <p class="text-xs text-text-secondary mt-1">自动识别并分类为政策、技术、市场、案例等主题</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="rule-type-badge rule-type-topic">主题分类</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-03 09:15
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-12 16:45
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-rule-btn text-primary hover:text-secondary text-sm" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-rule-btn text-danger hover:text-red-700 text-sm" title="删除">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- AI规则行 5 -->
+                        <tr class="table-row-hover" data-rule-id="rule-005">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">市场动态关键词匹配</h3>
+                                        <p class="text-xs text-text-secondary mt-1">包含"市场动态"、"行业趋势"、"投资分析"等关键词</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="rule-type-badge rule-type-keyword">关键词匹配</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-01 11:30
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-11 10:15
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-rule-btn text-primary hover:text-secondary text-sm" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-rule-btn text-danger hover:text-red-700 text-sm" title="删除">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 分页区域 -->
+        <div id="pagination-area" class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-text-secondary">
+                    显示第 <span class="font-medium">1-10</span> 条，共 <span class="font-medium">24</span> 条
+                </span>
+                <select id="page-size-select" class="px-3 py-1 border border-border-light rounded text-sm focus:outline-none focus:border-primary">
+                    <option value="10">10条/页</option>
+                    <option value="20">20条/页</option>
+                    <option value="50">50条/页</option>
+                    <option value="100">100条/页</option>
+                </select>
+            </div>
+            
+            <div id="pagination-controls" class="flex items-center space-x-2">
+                <button id="prev-page" class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50 disabled:opacity-50" disabled>
+                    <i class="fas fa-chevron-left mr-1"></i>上一页
+                </button>
+                
+                <div class="flex items-center space-x-1">
+                    <button class="px-3 py-1 bg-primary text-white rounded text-sm">1</button>
+                    <button class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50">2</button>
+                    <button class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50">3</button>
+                </div>
+                
+                <button id="next-page" class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50">
+                    下一页<i class="fas fa-chevron-right ml-1"></i>
+                </button>
+                
+                <div class="flex items-center space-x-2 ml-4">
+                    <span class="text-sm text-text-secondary">跳转到</span>
+                    <input type="number" id="goto-page" min="1" max="3" class="w-16 px-2 py-1 border border-border-light rounded text-sm text-center focus:outline-none focus:border-primary">
+                    <span class="text-sm text-text-secondary">页</span>
+                    <button id="goto-btn" class="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-secondary">
+                        跳转
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 新增/编辑AI规则弹窗 -->
+    <div id="rule-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="relative flex items-center justify-center min-h-screen p-4">
+            <div id="rule-modal-content" class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-enter">
+                <div class="flex items-center justify-between p-6 border-b border-border-light">
+                    <h3 id="rule-modal-title" class="text-lg font-semibold text-text-primary">新增AI规则</h3>
+                    <button id="close-modal-btn" class="text-text-secondary hover:text-text-primary">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="rule-form" class="p-6 space-y-6">
+                    <div class="space-y-2">
+                        <label for="rule-name" class="block text-sm font-medium text-text-primary">规则名称 *</label>
+                        <input type="text" id="rule-name" name="rule-name" class="w-full px-4 py-2 border border-border-light rounded-lg search-input-focus" placeholder="请输入规则名称" required>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="rule-type" class="block text-sm font-medium text-text-primary">规则类型 *</label>
+                        <select id="rule-type" name="rule-type" class="w-full px-4 py-2 border border-border-light rounded-lg focus:outline-none focus:border-primary" required>
+                            <option value="">请选择规则类型</option>
+                            <option value="keyword">关键词匹配</option>
+                            <option value="correlation">相关性排序</option>
+                            <option value="quality">内容质量评分</option>
+                            <option value="topic">主题分类</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="rule-description" class="block text-sm font-medium text-text-primary">规则描述</label>
+                        <textarea id="rule-description" name="rule-description" rows="3" class="w-full px-4 py-2 border border-border-light rounded-lg search-input-focus" placeholder="请输入规则描述"></textarea>
+                    </div>
+                    
+                    <!-- 关键词匹配配置 -->
+                    <div id="keyword-config" class="space-y-4 hidden">
+                        <h4 class="text-sm font-medium text-text-primary">关键词配置</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3">
+                                <input type="text" class="keyword-input flex-1 px-4 py-2 border border-border-light rounded-lg search-input-focus" placeholder="关键词1">
+                                <button type="button" class="remove-keyword-btn px-3 py-2 text-danger hover:bg-red-50 rounded border border-red-200">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="add-keyword-btn" class="px-4 py-2 text-primary hover:bg-blue-50 rounded border border-blue-200">
+                            <i class="fas fa-plus mr-1"></i>添加关键词
+                        </button>
+                    </div>
+                    
+                    <!-- 相关性排序配置 -->
+                    <div id="correlation-config" class="space-y-4 hidden">
+                        <h4 class="text-sm font-medium text-text-primary">相关性配置</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3">
+                                <label class="text-sm text-text-primary w-24">相关度权重:</label>
+                                <input type="range" id="correlation-weight" min="1" max="10" value="7" class="flex-1">
+                                <span id="correlation-value" class="text-sm text-text-secondary w-8">7</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 质量评分配置 -->
+                    <div id="quality-config" class="space-y-4 hidden">
+                        <h4 class="text-sm font-medium text-text-primary">质量评分配置</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3">
+                                <label class="text-sm text-text-primary w-24">最低分数:</label>
+                                <input type="number" id="min-quality-score" min="0" max="100" value="60" class="w-20 px-3 py-2 border border-border-light rounded text-center">
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <label class="text-sm text-text-primary w-24">权重设置:</label>
+                                <div class="flex-1 space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-text-secondary">内容完整性</span>
+                                        <input type="range" class="quality-weight w-32" min="1" max="10" value="8">
+                                        <span class="text-sm text-text-secondary w-6">8</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-text-secondary">专业性</span>
+                                        <input type="range" class="quality-weight w-32" min="1" max="10" value="9">
+                                        <span class="text-sm text-text-secondary w-6">9</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-text-secondary">时效性</span>
+                                        <input type="range" class="quality-weight w-32" min="1" max="10" value="7">
+                                        <span class="text-sm text-text-secondary w-6">7</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 主题分类配置 -->
+                    <div id="topic-config" class="space-y-4 hidden">
+                        <h4 class="text-sm font-medium text-text-primary">主题分类配置</h4>
+                        <div class="space-y-3">
+                            <div class="space-y-2">
+                                <label class="text-sm text-text-primary">预设主题:</label>
+                                <div class="space-y-2">
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" class="topic-checkbox" value="水务政策" checked>
+                                        <span class="text-sm text-text-secondary">水务政策</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" class="topic-checkbox" value="技术创新" checked>
+                                        <span class="text-sm text-text-secondary">技术创新</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" class="topic-checkbox" value="市场动态" checked>
+                                        <span class="text-sm text-text-secondary">市场动态</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2">
+                                        <input type="checkbox" class="topic-checkbox" value="案例研究" checked>
+                                        <span class="text-sm text-text-secondary">案例研究</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="flex items-center justify-end space-x-3 p-6 border-t border-border-light bg-gray-50">
+                    <button id="cancel-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50">
+                        取消
+                    </button>
+                    <button id="save-rule-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">
+                        保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div id="delete-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="relative flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full modal-enter">
+                <div class="p-6 text-center">
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-exclamation-triangle text-danger text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-text-primary mb-2">确认删除</h3>
+                    <p class="text-text-secondary mb-6">确定要删除这个AI规则吗？删除后无法恢复。</p>
+                    <div class="flex items-center justify-center space-x-3">
+                        <button id="cancel-delete-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50">
+                            取消
+                        </button>
+                        <button id="confirm-delete-btn" class="px-4 py-2 bg-danger text-white rounded-lg hover:bg-red-700">
+                            删除
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentEditingRuleId = null;
+            let currentDeletingRuleId = null;
+
+            // 侧边栏切换功能
+            document.querySelector('#sidebar-toggle').addEventListener('click', function() {
+                const sidebar = document.querySelector('#sidebar');
+                const mainContent = document.querySelector('#main-content');
+                const sidebarTexts = document.querySelectorAll('.sidebar-text');
+                
+                if (sidebar.classList.contains('sidebar-expanded')) {
+                    sidebar.classList.remove('sidebar-expanded');
+                    sidebar.classList.add('sidebar-collapsed');
+                    mainContent.classList.remove('ml-52');
+                    mainContent.classList.add('ml-12');
+                    sidebarTexts.forEach(text => text.style.display = 'none');
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                    sidebar.classList.add('sidebar-expanded');
+                    mainContent.classList.remove('ml-12');
+                    mainContent.classList.add('ml-52');
+                    sidebarTexts.forEach(text => text.style.display = 'block');
+                }
+            });
+
+            // 导航菜单点击事件
+            document.querySelector('#nav-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DASHBOARD.html';
+            });
+
+            document.querySelector('#nav-category').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_CATEGORY.html';
+            });
+
+            document.querySelector('#nav-update-time').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_UPDATE_TIME.html';
+            });
+
+            document.querySelector('#nav-data-source').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DATA_SOURCE.html';
+            });
+
+            document.querySelector('#nav-users').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_USER_PERMISSION.html';
+            });
+
+            document.querySelector('#nav-api').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_API_MANAGE.html';
+            });
+
+            // 面包屑导航
+            document.querySelector('#breadcrumb-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DASHBOARD.html';
+            });
+
+            // 退出登录
+            document.querySelector('#logout-btn').addEventListener('click', function() {
+                if (confirm('确定要退出登录吗？')) {
+                    window.location.href = 'P-ADMIN_LOGIN.html';
+                }
+            });
+
+            // 搜索功能
+            document.querySelector('#keyword-search').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    const keyword = this.value.trim();
+                    console.log('搜索AI规则:', keyword);
+                    // 这里应该调用搜索API
+                }
+            });
+
+            // 规则类型筛选
+            document.querySelector('#rule-type-filter').addEventListener('change', function() {
+                const ruleType = this.value;
+                console.log('筛选规则类型:', ruleType);
+                // 这里应该调用筛选API
+            });
+
+            // 全选功能
+            document.querySelector('#select-all').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('#rules-table-body input[type="checkbox"]');
+                const batchDeleteBtn = document.querySelector('#batch-delete');
+                
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                
+                // 更新批量删除按钮状态
+                const checkedCount = document.querySelectorAll('#rules-table-body input[type="checkbox"]:checked').length;
+                batchDeleteBtn.disabled = checkedCount === 0;
+            });
+
+            // 监听单个复选框变化
+            document.querySelectorAll('#rules-table-body input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const totalCheckboxes = document.querySelectorAll('#rules-table-body input[type="checkbox"]').length;
+                    const checkedCheckboxes = document.querySelectorAll('#rules-table-body input[type="checkbox"]:checked').length;
+                    const selectAllCheckbox = document.querySelector('#select-all');
+                    const batchDeleteBtn = document.querySelector('#batch-delete');
+                    
+                    // 更新全选复选框状态
+                    selectAllCheckbox.checked = checkedCheckboxes === totalCheckboxes;
+                    selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+                    
+                    // 更新批量删除按钮状态
+                    batchDeleteBtn.disabled = checkedCheckboxes === 0;
+                });
+            });
+
+            // 批量删除
+            document.querySelector('#batch-delete').addEventListener('click', function() {
+                const checkedBoxes = document.querySelectorAll('#rules-table-body input[type="checkbox"]:checked');
+                if (checkedBoxes.length > 0) {
+                    if (confirm(`确定要删除选中的 ${checkedBoxes.length} 个规则吗？`)) {
+                        console.log('批量删除规则');
+                        // 这里应该调用批量删除API
+                    }
+                }
+            });
+
+            // 新增规则按钮
+            document.querySelector('#add-rule-btn').addEventListener('click', function() {
+                openRuleModal('新增AI规则', null);
+            });
+
+            // 编辑规则按钮
+            document.querySelectorAll('.edit-rule-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const ruleRow = this.closest('tr');
+                    const ruleId = ruleRow.dataset.ruleId;
+                    const ruleName = ruleRow.querySelector('h3').textContent;
+                    const ruleType = ruleRow.querySelector('.rule-type-badge').textContent;
+                    
+                    console.log('编辑规则:', ruleId);
+                    openRuleModal('编辑AI规则', {
+                        id: ruleId,
+                        name: ruleName,
+                        type: ruleType
+                    });
+                });
+            });
+
+            // 删除规则按钮
+            document.querySelectorAll('.delete-rule-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const ruleRow = this.closest('tr');
+                    const ruleId = ruleRow.dataset.ruleId;
+                    const ruleName = ruleRow.querySelector('h3').textContent;
+                    
+                    currentDeletingRuleId = ruleId;
+                    document.querySelector('#delete-modal').classList.remove('hidden');
+                    document.querySelector('#delete-modal .modal-enter').classList.add('modal-enter-active');
+                });
+            });
+
+            // 分页功能
+            document.querySelector('#page-size-select').addEventListener('change', function() {
+                const pageSize = this.value;
+                console.log('每页显示:', pageSize);
+                // 这里应该调用分页API
+            });
+
+            document.querySelector('#goto-btn').addEventListener('click', function() {
+                const pageNumber = document.querySelector('#goto-page').value;
+                if (pageNumber && pageNumber >= 1 && pageNumber <= 3) {
+                    console.log('跳转到页面:', pageNumber);
+                    // 这里应该调用分页API
+                }
+            });
+
+            // 规则类型变化时显示对应的配置
+            document.querySelector('#rule-type').addEventListener('change', function() {
+                const ruleType = this.value;
+                
+                // 隐藏所有配置面板
+                document.querySelector('#keyword-config').classList.add('hidden');
+                document.querySelector('#correlation-config').classList.add('hidden');
+                document.querySelector('#quality-config').classList.add('hidden');
+                document.querySelector('#topic-config').classList.add('hidden');
+                
+                // 显示对应的配置面板
+                switch(ruleType) {
+                    case 'keyword':
+                        document.querySelector('#keyword-config').classList.remove('hidden');
+                        break;
+                    case 'correlation':
+                        document.querySelector('#correlation-config').classList.remove('hidden');
+                        break;
+                    case 'quality':
+                        document.querySelector('#quality-config').classList.remove('hidden');
+                        break;
+                    case 'topic':
+                        document.querySelector('#topic-config').classList.remove('hidden');
+                        break;
+                }
+            });
+
+            // 添加关键词
+            document.querySelector('#add-keyword-btn').addEventListener('click', function() {
+                const container = document.querySelector('#keyword-config .space-y-3');
+                const keywordDiv = document.createElement('div');
+                keywordDiv.className = 'flex items-center space-x-3';
+                keywordDiv.innerHTML = `
+                    <input type="text" class="keyword-input flex-1 px-4 py-2 border border-border-light rounded-lg search-input-focus" placeholder="关键词">
+                    <button type="button" class="remove-keyword-btn px-3 py-2 text-danger hover:bg-red-50 rounded border border-red-200">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                `;
+                container.appendChild(keywordDiv);
+                
+                // 绑定删除事件
+                keywordDiv.querySelector('.remove-keyword-btn').addEventListener('click', function() {
+                    keywordDiv.remove();
+                });
+            });
+
+            // 绑定现有关键词删除事件
+            document.querySelectorAll('.remove-keyword-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.flex').remove();
+                });
+            });
+
+            // 相关性权重滑块
+            document.querySelector('#correlation-weight').addEventListener('input', function() {
+                document.querySelector('#correlation-value').textContent = this.value;
+            });
+
+            // 质量权重滑块
+            document.querySelectorAll('.quality-weight').forEach(slider => {
+                slider.addEventListener('input', function() {
+                    this.nextElementSibling.textContent = this.value;
+                });
+            });
+
+            // 打开规则弹窗
+            function openRuleModal(title, ruleData) {
+                currentEditingRuleId = ruleData ? ruleData.id : null;
+                
+                document.querySelector('#rule-modal-title').textContent = title;
+                document.querySelector('#rule-form').reset();
+                
+                // 如果是编辑模式，填充数据
+                if (ruleData) {
+                    document.querySelector('#rule-name').value = ruleData.name;
+                    // 根据规则类型设置选项
+                    const typeMap = {
+                        '关键词匹配': 'keyword',
+                        '相关性排序': 'correlation',
+                        '内容质量评分': 'quality',
+                        '主题分类': 'topic'
+                    };
+                    document.querySelector('#rule-type').value = typeMap[ruleData.type] || '';
+                    
+                    // 触发类型变化事件以显示对应的配置面板
+                    document.querySelector('#rule-type').dispatchEvent(new Event('change'));
+                }
+                
+                document.querySelector('#rule-modal').classList.remove('hidden');
+                setTimeout(() => {
+                    document.querySelector('#rule-modal-content').classList.add('modal-enter-active');
+                }, 10);
+            }
+
+            // 关闭规则弹窗
+            function closeRuleModal() {
+                document.querySelector('#rule-modal-content').classList.remove('modal-enter-active');
+                setTimeout(() => {
+                    document.querySelector('#rule-modal').classList.add('hidden');
+                    currentEditingRuleId = null;
+                }, 200);
+            }
+
+            document.querySelector('#close-modal-btn').addEventListener('click', closeRuleModal);
+            document.querySelector('#cancel-btn').addEventListener('click', closeRuleModal);
+
+            // 保存规则
+            document.querySelector('#save-rule-btn').addEventListener('click', function() {
+                const formData = new FormData(document.querySelector('#rule-form'));
+                const ruleData = {
+                    name: formData.get('rule-name'),
+                    type: formData.get('rule-type'),
+                    description: formData.get('rule-description')
+                };
+                
+                if (currentEditingRuleId) {
+                    ruleData.id = currentEditingRuleId;
+                    console.log('更新规则:', ruleData);
+                } else {
+                    console.log('新增规则:', ruleData);
+                }
+                
+                // 这里应该调用保存API
+                closeRuleModal();
+                
+                // 显示成功提示
+                alert(currentEditingRuleId ? '规则更新成功！' : '规则新增成功！');
+            });
+
+            // 关闭删除弹窗
+            function closeDeleteModal() {
+                document.querySelector('#delete-modal .modal-enter').classList.remove('modal-enter-active');
+                setTimeout(() => {
+                    document.querySelector('#delete-modal').classList.add('hidden');
+                    currentDeletingRuleId = null;
+                }, 200);
+            }
+
+            document.querySelector('#cancel-delete-btn').addEventListener('click', closeDeleteModal);
+
+            // 确认删除
+            document.querySelector('#confirm-delete-btn').addEventListener('click', function() {
+                console.log('删除规则:', currentDeletingRuleId);
+                // 这里应该调用删除API
+                closeDeleteModal();
+                
+                // 从表格中移除对应的行
+                const ruleRow = document.querySelector(`tr[data-rule-id="${currentDeletingRuleId}"]`);
+                if (ruleRow) {
+                    ruleRow.remove();
+                }
+                
+                alert('规则删除成功！');
+            });
+
+            // 点击弹窗背景关闭
+            document.querySelector('#rule-modal .modal-overlay').addEventListener('click', closeRuleModal);
+            document.querySelector('#delete-modal .modal-overlay').addEventListener('click', closeDeleteModal);
+
+            // ESC键关闭弹窗
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    if (!document.querySelector('#rule-modal').classList.contains('hidden')) {
+                        closeRuleModal();
+                    }
+                    if (!document.querySelector('#delete-modal').classList.contains('hidden')) {
+                        closeDeleteModal();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

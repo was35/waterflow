@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水脉通 - 后台登录</title>
+    <script src="https://unpkg.byted-static.com/coze/space_ppt_lib/1.0.3-alpha.12/lib/tailwindcss.js"></script>
+    <script src="https://unpkg.byted-static.com/fortawesome/fontawesome-free/6.7.2/js/all.min.js" data-auto-replace-svg="nest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#1e40af',
+                        tertiary: '#3b82f6',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        'text-primary': '#1f2937',
+                        'text-secondary': '#6b7280',
+                        'bg-light': '#f8fafc',
+                        'border-light': '#e5e7eb'
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'login': '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .login-input-focus:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .login-button-hover:hover {
+            background-color: #1e40af;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px -3px rgba(37, 99, 235, 0.3);
+        }
+        
+        .login-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .form-group {
+            position: relative;
+        }
+        
+        .form-group input {
+            padding-left: 40px;
+        }
+        
+        .form-group i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+        
+        .error-message {
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .loading-spinner {
+            display: none;
+        }
+        
+        .loading-spinner.show {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="min-h-screen login-container flex items-center justify-center p-4">
+    <!-- 登录容器 -->
+    <div id="login-container" class="w-full max-w-md">
+        <!-- 登录卡片 -->
+        <div id="login-card" class="bg-white rounded-xl shadow-login p-8 w-full">
+            <!-- Logo和系统名称 -->
+            <div id="login-header" class="text-center mb-8">
+                <div id="login-logo" class="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-tint text-white text-2xl"></i>
+                </div>
+                <h1 id="system-title" class="text-2xl font-bold text-text-primary mb-2">水脉通管理系统</h1>
+                <p id="system-subtitle" class="text-text-secondary">请登录您的管理员账户</p>
+            </div>
+            
+            <!-- 登录表单 -->
+            <form id="login-form" class="space-y-6">
+                <!-- 用户名输入框 -->
+                <div id="username-group" class="form-group">
+                    <label for="username" class="block text-sm font-medium text-text-primary mb-2">
+                        用户名
+                    </label>
+                    <div class="relative">
+                        <i class="fas fa-user"></i>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            class="w-full h-10 px-4 border border-border-light rounded-lg login-input-focus transition-all duration-200"
+                            placeholder="请输入用户名"
+                            required
+                        >
+                    </div>
+                    <p id="username-error" class="error-message text-danger text-sm mt-1">
+                        <i class="fas fa-exclamation-circle mr-1"></i>
+                        请输入用户名
+                    </p>
+                </div>
+                
+                <!-- 密码输入框 -->
+                <div id="password-group" class="form-group">
+                    <label for="password" class="block text-sm font-medium text-text-primary mb-2">
+                        密码
+                    </label>
+                    <div class="relative">
+                        <i class="fas fa-lock"></i>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="w-full h-10 px-4 border border-border-light rounded-lg login-input-focus transition-all duration-200"
+                            placeholder="请输入密码"
+                            required
+                        >
+                        <button 
+                            type="button" 
+                            id="toggle-password" 
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <p id="password-error" class="error-message text-danger text-sm mt-1">
+                        <i class="fas fa-exclamation-circle mr-1"></i>
+                        请输入密码
+                    </p>
+                </div>
+                
+                <!-- 记住密码和忘记密码 -->
+                <div id="login-options" class="flex items-center justify-between">
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="remember-me" class="rounded border-border-light focus:ring-primary">
+                        <span class="text-sm text-text-secondary">记住密码</span>
+                    </label>
+                    <button 
+                        type="button" 
+                        id="forgot-password" 
+                        class="text-sm text-primary hover:text-secondary transition-colors"
+                    >
+                        忘记密码？
+                    </button>
+                </div>
+                
+                <!-- 登录按钮 -->
+                <button 
+                    type="submit" 
+                    id="login-button" 
+                    class="w-full h-11 bg-primary text-white rounded-lg font-medium login-button-hover transition-all duration-200 flex items-center justify-center space-x-2"
+                >
+                    <span id="login-button-text">登录</span>
+                    <i id="login-loading" class="fas fa-spinner fa-spin loading-spinner"></i>
+                </button>
+                
+                <!-- 错误提示 -->
+                <div id="login-error" class="error-message bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                        <span id="login-error-text" class="text-danger text-sm">用户名或密码错误，请重试</span>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- 底部链接 -->
+            <div id="login-footer" class="text-center mt-6 pt-6 border-t border-border-light">
+                <p class="text-sm text-text-secondary">
+                    没有账户？
+                    <button id="register-link" class="text-primary hover:text-secondary transition-colors">
+                        联系系统管理员
+                    </button>
+                </p>
+            </div>
+        </div>
+        
+        <!-- 版权信息 -->
+        <div id="copyright" class="text-center mt-6">
+            <p class="text-white text-sm opacity-80">
+                © 2024 水脉通管理系统. 保留所有权利.
+            </p>
+        </div>
+    </div>
+    
+    <!-- 忘记密码模态框 -->
+    <div id="forgot-password-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-xl shadow-login p-6 w-full max-w-md">
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-warning rounded-lg flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-key text-white"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-text-primary">重置密码</h3>
+                <p class="text-text-secondary text-sm mt-1">请联系系统管理员重置您的密码</p>
+            </div>
+            <button 
+                id="close-forgot-modal" 
+                class="w-full h-10 bg-primary text-white rounded-lg hover:bg-secondary transition-colors"
+            >
+                我知道了
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取表单元素
+            const loginForm = document.querySelector('#login-form');
+            const usernameInput = document.querySelector('#username');
+            const passwordInput = document.querySelector('#password');
+            const loginButton = document.querySelector('#login-button');
+            const loginButtonText = document.querySelector('#login-button-text');
+            const loginLoading = document.querySelector('#login-loading');
+            const togglePasswordButton = document.querySelector('#toggle-password');
+            const forgotPasswordButton = document.querySelector('#forgot-password');
+            const closeForgotModalButton = document.querySelector('#close-forgot-modal');
+            const forgotPasswordModal = document.querySelector('#forgot-password-modal');
+            const registerLink = document.querySelector('#register-link');
+            
+            // 密码显示/隐藏切换
+            togglePasswordButton.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+            
+            // 忘记密码模态框
+            forgotPasswordButton.addEventListener('click', function() {
+                forgotPasswordModal.classList.remove('hidden');
+            });
+            
+            closeForgotModalButton.addEventListener('click', function() {
+                forgotPasswordModal.classList.add('hidden');
+            });
+            
+            // 点击模态框背景关闭
+            forgotPasswordModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+            
+            // 注册链接点击
+            registerLink.addEventListener('click', function() {
+                alert('请联系系统管理员获取账户信息');
+            });
+            
+            // 输入验证函数
+            function validateInput(input, errorElement, validator, errorMessage) {
+                const isValid = validator(input.value);
+                if (!isValid) {
+                    input.classList.add('border-danger');
+                    errorElement.textContent = errorMessage;
+                    errorElement.classList.add('show');
+                } else {
+                    input.classList.remove('border-danger');
+                    errorElement.classList.remove('show');
+                }
+                return isValid;
+            }
+            
+            // 用户名验证
+            function validateUsername(value) {
+                return value.trim().length >= 3;
+            }
+            
+            // 密码验证
+            function validatePassword(value) {
+                return value.length >= 6;
+            }
+            
+            // 实时验证
+            usernameInput.addEventListener('blur', function() {
+                validateInput(
+                    this,
+                    document.querySelector('#username-error'),
+                    validateUsername,
+                    '<i class="fas fa-exclamation-circle mr-1"></i>用户名至少需要3个字符'
+                );
+            });
+            
+            passwordInput.addEventListener('blur', function() {
+                validateInput(
+                    this,
+                    document.querySelector('#password-error'),
+                    validatePassword,
+                    '<i class="fas fa-exclamation-circle mr-1"></i>密码至少需要6个字符'
+                );
+            });
+            
+            // 清除错误状态
+            usernameInput.addEventListener('input', function() {
+                if (this.classList.contains('border-danger')) {
+                    this.classList.remove('border-danger');
+                    document.querySelector('#username-error').classList.remove('show');
+                }
+            });
+            
+            passwordInput.addEventListener('input', function() {
+                if (this.classList.contains('border-danger')) {
+                    this.classList.remove('border-danger');
+                    document.querySelector('#password-error').classList.remove('show');
+                }
+            });
+            
+            // 表单提交
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 清除之前的错误
+                document.querySelector('#login-error').classList.remove('show');
+                
+                // 验证所有字段
+                const isUsernameValid = validateInput(
+                    usernameInput,
+                    document.querySelector('#username-error'),
+                    validateUsername,
+                    '<i class="fas fa-exclamation-circle mr-1"></i>用户名至少需要3个字符'
+                );
+                
+                const isPasswordValid = validateInput(
+                    passwordInput,
+                    document.querySelector('#password-error'),
+                    validatePassword,
+                    '<i class="fas fa-exclamation-circle mr-1"></i>密码至少需要6个字符'
+                );
+                
+                if (!isUsernameValid || !isPasswordValid) {
+                    return;
+                }
+                
+                // 显示加载状态
+                loginButton.disabled = true;
+                loginButtonText.textContent = '登录中...';
+                loginLoading.classList.add('show');
+                
+                // 模拟登录请求
+                setTimeout(function() {
+                    // 重置按钮状态
+                    loginButton.disabled = false;
+                    loginButtonText.textContent = '登录';
+                    loginLoading.classList.remove('show');
+                    
+                    // 模拟登录成功，跳转到后台首页
+                    window.location.href = 'P-ADMIN_DASHBOARD.html';
+                    
+                }, 1500);
+            });
+            
+            // 键盘快捷键
+            document.addEventListener('keydown', function(e) {
+                // ESC键关闭模态框
+                if (e.key === 'Escape' && !forgotPasswordModal.classList.contains('hidden')) {
+                    forgotPasswordModal.classList.add('hidden');
+                }
+                
+                // Enter键提交表单
+                if (e.key === 'Enter' && document.activeElement.tagName !== 'BUTTON') {
+                    loginForm.dispatchEvent(new Event('submit'));
+                }
+            });
+            
+            // 记住密码功能
+            const rememberMeCheckbox = document.querySelector('#remember-me');
+            // 页面加载时检查是否有记住的密码
+            if (localStorage.getItem('rememberMe') === 'true') {
+                rememberMeCheckbox.checked = true;
+                usernameInput.value = localStorage.getItem('username') || '';
+            }
+            
+            // 记住密码设置
+            rememberMeCheckbox.addEventListener('change', function() {
+                localStorage.setItem('rememberMe', this.checked);
+                if (this.checked) {
+                    localStorage.setItem('username', usernameInput.value);
+                } else {
+                    localStorage.removeItem('username');
+                }
+            });
+            
+            // 用户名输入时更新本地存储
+            usernameInput.addEventListener('input', function() {
+                if (rememberMeCheckbox.checked) {
+                    localStorage.setItem('username', this.value);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水脉通 - 后台管理首页</title>
+    <script src="https://unpkg.byted-static.com/coze/space_ppt_lib/1.0.3-alpha.12/lib/tailwindcss.js"></script>
+    <script src="https://unpkg.byted-static.com/fortawesome/fontawesome-free/6.7.2/js/all.min.js" data-auto-replace-svg="nest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#1e40af',
+                        tertiary: '#3b82f6',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        'text-primary': '#1f2937',
+                        'text-secondary': '#6b7280',
+                        'bg-light': '#f8fafc',
+                        'border-light': '#e5e7eb'
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-collapsed {
+            width: 48px;
+        }
+        
+        .sidebar-expanded {
+            width: 200px;
+        }
+        
+        .nav-item-active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+        }
+        
+        .card-hover:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+        
+        .quick-action-btn:hover {
+            background-color: #f3f4f6;
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-bg-light min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header id="top-navbar" class="fixed top-0 left-0 right-0 bg-white border-b border-border-light h-16 z-50">
+        <div class="flex items-center justify-between h-full px-6">
+            <!-- 左侧：Logo和系统名称 -->
+            <div id="navbar-left" class="flex items-center space-x-4">
+                <button id="sidebar-toggle" class="p-2 rounded-lg hover:bg-gray-100 lg:hidden">
+                    <i class="fas fa-bars text-gray-600"></i>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div id="logo" class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-tint text-white text-sm"></i>
+                    </div>
+                    <h1 id="site-title" class="text-xl font-semibold text-text-primary hidden sm:block">水脉通管理系统</h1>
+                </div>
+            </div>
+            
+            <!-- 右侧：管理员信息和退出登录 -->
+            <div id="navbar-right" class="flex items-center space-x-4">
+                <div id="admin-info" class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <div class="hidden sm:block">
+                        <div class="text-sm font-medium text-text-primary">管理员</div>
+                        <div class="text-xs text-text-secondary">admin@shuimaitong.com</div>
+                    </div>
+                </div>
+                <button id="logout-btn" class="px-4 py-2 text-sm text-text-secondary hover:text-danger border border-border-light rounded-lg hover:bg-red-50 flex items-center space-x-2">
+                    <i class="fas fa-sign-out-alt text-sm"></i>
+                    <span>退出登录</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 左侧菜单 -->
+    <aside id="sidebar" class="fixed left-0 top-16 bottom-0 bg-white border-r border-border-light sidebar-expanded transition-all duration-300 z-40">
+        <nav id="sidebar-nav" class="p-4 space-y-2">
+            <a href="#" id="nav-dashboard" class="flex items-center space-x-3 px-3 py-2 rounded-lg nav-item-active">
+                <i class="fas fa-home w-5"></i>
+                <span class="sidebar-text">后台首页</span>
+            </a>
+            <a href="#" id="nav-category" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-folder w-5"></i>
+                <span class="sidebar-text">资讯类别管理</span>
+            </a>
+            <a href="#" id="nav-update-time" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-clock w-5"></i>
+                <span class="sidebar-text">更新时间设置</span>
+            </a>
+            <a href="#" id="nav-data-source" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-rss w-5"></i>
+                <span class="sidebar-text">数据源配置</span>
+            </a>
+            <a href="#" id="nav-ai-rules" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-brain w-5"></i>
+                <span class="sidebar-text">AI筛选规则设置</span>
+            </a>
+            <a href="#" id="nav-user-permission" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-users w-5"></i>
+                <span class="sidebar-text">用户权限管理</span>
+            </a>
+            <a href="#" id="nav-api-manage" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-code w-5"></i>
+                <span class="sidebar-text">API生成与管理</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main id="main-content" class="ml-52 mt-16 p-6 transition-all duration-300">
+        <!-- 页面头部 -->
+        <div id="page-header" class="mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 id="page-title" class="text-2xl font-semibold text-text-primary">后台管理首页</h2>
+                    <p id="welcome-message" class="mt-1 text-text-secondary">欢迎回来，管理员！今天是 2024年1月15日</p>
+                </div>
+                <div id="page-actions" class="flex items-center space-x-3">
+                    <button id="system-info-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                        <i class="fas fa-info-circle text-sm"></i>
+                        <span>系统信息</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 概览统计区 -->
+        <div id="overview-section" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- 资讯总数卡片 -->
+            <div id="total-articles-card" class="bg-white rounded-lg shadow-card p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-text-secondary">资讯总数</p>
+                        <p class="text-3xl font-bold text-text-primary mt-2">1,248</p>
+                        <p class="text-sm text-success mt-1">
+                            <i class="fas fa-arrow-up text-xs"></i> +12% 较上月
+                        </p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-newspaper text-primary text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 今日更新数卡片 -->
+            <div id="today-updates-card" class="bg-white rounded-lg shadow-card p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-text-secondary">今日更新</p>
+                        <p class="text-3xl font-bold text-text-primary mt-2">23</p>
+                        <p class="text-sm text-success mt-1">
+                            <i class="fas fa-arrow-up text-xs"></i> +5 较昨日
+                        </p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-sync-alt text-success text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API调用次数卡片 -->
+            <div id="api-calls-card" class="bg-white rounded-lg shadow-card p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-text-secondary">API调用次数</p>
+                        <p class="text-3xl font-bold text-text-primary mt-2">5,678</p>
+                        <p class="text-sm text-warning mt-1">
+                            <i class="fas fa-arrow-up text-xs"></i> +8% 较上月
+                        </p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-code text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 活跃用户数卡片 -->
+            <div id="active-users-card" class="bg-white rounded-lg shadow-card p-6 card-hover">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-text-secondary">活跃用户</p>
+                        <p class="text-3xl font-bold text-text-primary mt-2">156</p>
+                        <p class="text-sm text-success mt-1">
+                            <i class="fas fa-arrow-up text-xs"></i> +3 较昨日
+                        </p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-users text-warning text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快捷入口区 -->
+        <div id="quick-actions-section" class="bg-white rounded-lg shadow-card p-6">
+            <h3 class="text-lg font-semibold text-text-primary mb-6">快捷操作</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 资讯类别管理 -->
+                <button id="quick-category" class="w-full p-4 border border-border-light rounded-lg hover:bg-gray-50 quick-action-btn text-left">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-folder text-primary text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-text-primary">资讯类别管理</h4>
+                            <p class="text-sm text-text-secondary mt-1">管理资讯分类和标签</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-text-secondary"></i>
+                    </div>
+                </button>
+
+                <!-- 数据源配置 -->
+                <button id="quick-data-source" class="w-full p-4 border border-border-light rounded-lg hover:bg-gray-50 quick-action-btn text-left">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-rss text-success text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-text-primary">数据源配置</h4>
+                            <p class="text-sm text-text-secondary mt-1">管理资讯数据源</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-text-secondary"></i>
+                    </div>
+                </button>
+
+                <!-- AI筛选规则设置 -->
+                <button id="quick-ai-rules" class="w-full p-4 border border-border-light rounded-lg hover:bg-gray-50 quick-action-btn text-left">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-brain text-purple-600 text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-text-primary">AI筛选规则设置</h4>
+                            <p class="text-sm text-text-secondary mt-1">配置AI筛选参数</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-text-secondary"></i>
+                    </div>
+                </button>
+
+                <!-- 用户权限管理 -->
+                <button id="quick-user-permission" class="w-full p-4 border border-border-light rounded-lg hover:bg-gray-50 quick-action-btn text-left">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-warning text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-text-primary">用户权限管理</h4>
+                            <p class="text-sm text-text-secondary mt-1">管理后台用户账户</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-text-secondary"></i>
+                    </div>
+                </button>
+
+                <!-- API生成与管理 -->
+                <button id="quick-api-manage" class="w-full p-4 border border-border-light rounded-lg hover:bg-gray-50 quick-action-btn text-left">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-code text-danger text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-text-primary">API生成与管理</h4>
+                            <p class="text-sm text-text-secondary mt-1">管理API密钥和权限</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-text-secondary"></i>
+                    </div>
+                </button>
+
+                <!-- 更新时间设置 -->
+                <button id="quick-update-time" class="w-full p-4 border border-border-light rounded-lg hover:bg-gray-50 quick-action-btn text-left">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-info text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-text-primary">更新时间设置</h4>
+                            <p class="text-sm text-text-secondary mt-1">设置资讯更新时间</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-text-secondary"></i>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 侧边栏切换功能
+            document.querySelector('#sidebar-toggle').addEventListener('click', function() {
+                const sidebar = document.querySelector('#sidebar');
+                const mainContent = document.querySelector('#main-content');
+                const sidebarTexts = document.querySelectorAll('.sidebar-text');
+                
+                if (sidebar.classList.contains('sidebar-expanded')) {
+                    sidebar.classList.remove('sidebar-expanded');
+                    sidebar.classList.add('sidebar-collapsed');
+                    mainContent.classList.remove('ml-52');
+                    mainContent.classList.add('ml-12');
+                    sidebarTexts.forEach(text => text.style.display = 'none');
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                    sidebar.classList.add('sidebar-expanded');
+                    mainContent.classList.remove('ml-12');
+                    mainContent.classList.add('ml-52');
+                    sidebarTexts.forEach(text => text.style.display = 'block');
+                }
+            });
+
+            // 左侧菜单导航
+            document.querySelector('#nav-category').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_CATEGORY.html';
+            });
+
+            document.querySelector('#nav-update-time').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_UPDATE_TIME.html';
+            });
+
+            document.querySelector('#nav-data-source').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DATA_SOURCE.html';
+            });
+
+            document.querySelector('#nav-ai-rules').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_AI_RULES.html';
+            });
+
+            document.querySelector('#nav-user-permission').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_USER_PERMISSION.html';
+            });
+
+            document.querySelector('#nav-api-manage').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_API_MANAGE.html';
+            });
+
+            // 快捷入口按钮
+            document.querySelector('#quick-category').addEventListener('click', function() {
+                window.location.href = 'P-ADMIN_CATEGORY.html';
+            });
+
+            document.querySelector('#quick-data-source').addEventListener('click', function() {
+                window.location.href = 'P-ADMIN_DATA_SOURCE.html';
+            });
+
+            document.querySelector('#quick-ai-rules').addEventListener('click', function() {
+                window.location.href = 'P-ADMIN_AI_RULES.html';
+            });
+
+            document.querySelector('#quick-user-permission').addEventListener('click', function() {
+                window.location.href = 'P-ADMIN_USER_PERMISSION.html';
+            });
+
+            document.querySelector('#quick-api-manage').addEventListener('click', function() {
+                window.location.href = 'P-ADMIN_API_MANAGE.html';
+            });
+
+            document.querySelector('#quick-update-time').addEventListener('click', function() {
+                window.location.href = 'P-ADMIN_UPDATE_TIME.html';
+            });
+
+            // 退出登录
+            document.querySelector('#logout-btn').addEventListener('click', function() {
+                if (confirm('确定要退出登录吗？')) {
+                    window.location.href = 'P-ADMIN_LOGIN.html';
+                }
+            });
+
+            // 系统信息按钮
+            document.querySelector('#system-info-btn').addEventListener('click', function() {
+                alert('水脉通管理系统 v1.0.0\n\n系统状态：正常运行\n最后更新：2024-01-15\n服务器时间：' + new Date().toLocaleString());
+            });
+
+            // 更新欢迎信息中的日期
+            const today = new Date();
+            const dateString = today.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            document.querySelector('#welcome-message').textContent = `欢迎回来，管理员！今天是 ${dateString}`;
+        });
+    </script>
+</body>
+</html>

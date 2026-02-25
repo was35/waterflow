@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据源配置 - 水脉通</title>
+    <script src="https://unpkg.byted-static.com/coze/space_ppt_lib/1.0.3-alpha.12/lib/tailwindcss.js"></script>
+    <script src="https://unpkg.byted-static.com/fortawesome/fontawesome-free/6.7.2/js/all.min.js" data-auto-replace-svg="nest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#1e40af',
+                        tertiary: '#3b82f6',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        'text-primary': '#1f2937',
+                        'text-secondary': '#6b7280',
+                        'bg-light': '#f8fafc',
+                        'border-light': '#e5e7eb'
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-collapsed {
+            width: 48px;
+        }
+        
+        .sidebar-expanded {
+            width: 200px;
+        }
+        
+        .table-row-hover:hover {
+            background-color: #f9fafb;
+        }
+        
+        .nav-item-active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+        }
+        
+        .search-input-focus:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .filter-dropdown {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .filter-dropdown.show {
+            max-height: 300px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #2563eb;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        
+        .relevance-bar {
+            background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%);
+            height: 8px;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .relevance-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-bg-light min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header id="top-navbar" class="fixed top-0 left-0 right-0 bg-white border-b border-border-light h-16 z-50">
+        <div class="flex items-center justify-between h-full px-6">
+            <!-- 左侧：Logo和网站名称 -->
+            <div id="navbar-left" class="flex items-center space-x-4">
+                <button id="sidebar-toggle" class="p-2 rounded-lg hover:bg-gray-100 lg:hidden">
+                    <i class="fas fa-bars text-gray-600"></i>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div id="logo" class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-tint text-white text-sm"></i>
+                    </div>
+                    <h1 id="site-title" class="text-xl font-semibold text-text-primary hidden sm:block">水脉通管理系统</h1>
+                </div>
+            </div>
+            
+            <!-- 右侧：管理员信息和退出登录 -->
+            <div id="navbar-right" class="flex items-center space-x-4">
+                <div id="admin-info" class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <span class="text-sm text-text-primary hidden sm:block">管理员</span>
+                </div>
+                <button id="logout-btn" class="px-4 py-2 text-sm text-text-secondary hover:text-danger border border-border-light rounded-lg hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt mr-1"></i>退出登录
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 左侧菜单 -->
+    <aside id="sidebar" class="fixed left-0 top-16 bottom-0 bg-white border-r border-border-light sidebar-expanded transition-all duration-300 z-40">
+        <nav id="sidebar-nav" class="p-4 space-y-2">
+            <a href="#" id="nav-dashboard" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-home w-5"></i>
+                <span class="sidebar-text">后台首页</span>
+            </a>
+            <a href="#" id="nav-categories" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-folder w-5"></i>
+                <span class="sidebar-text">资讯类别管理</span>
+            </a>
+            <a href="#" id="nav-update-time" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-clock w-5"></i>
+                <span class="sidebar-text">更新时间设置</span>
+            </a>
+            <a href="#" id="nav-sources" class="flex items-center space-x-3 px-3 py-2 rounded-lg nav-item-active">
+                <i class="fas fa-rss w-5"></i>
+                <span class="sidebar-text">数据源配置</span>
+            </a>
+            <a href="#" id="nav-ai-rules" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-brain w-5"></i>
+                <span class="sidebar-text">AI筛选规则设置</span>
+            </a>
+            <a href="#" id="nav-users" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-users w-5"></i>
+                <span class="sidebar-text">用户权限管理</span>
+            </a>
+            <a href="#" id="nav-api" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-code w-5"></i>
+                <span class="sidebar-text">API生成与管理</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main id="main-content" class="ml-52 mt-16 p-6 transition-all duration-300">
+        <!-- 页面头部 -->
+        <div id="page-header" class="mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 id="page-title" class="text-2xl font-semibold text-text-primary">数据源配置</h2>
+                    <nav id="breadcrumb" class="mt-1">
+                        <ol class="flex items-center space-x-2 text-sm text-text-secondary">
+                            <li><a href="#" id="breadcrumb-dashboard" class="hover:text-primary">后台首页</a></li>
+                            <li><i class="fas fa-chevron-right text-xs"></i></li>
+                            <li class="text-text-primary">数据源配置</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div id="page-actions" class="flex items-center space-x-3">
+                    <button id="ai-review-btn" class="px-4 py-2 bg-info text-white rounded-lg hover:bg-cyan-600 flex items-center space-x-2">
+                        <i class="fas fa-robot text-sm"></i>
+                        <span>AI发现数据源审核</span>
+                    </button>
+                    <button id="add-source-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary flex items-center space-x-2">
+                        <i class="fas fa-plus text-sm"></i>
+                        <span>新增数据源</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工具栏区域 -->
+        <div id="toolbar" class="bg-white rounded-lg shadow-card p-4 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <!-- 搜索框 -->
+                <div id="search-section" class="flex-1 max-w-md">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="keyword-search" 
+                            placeholder="搜索数据源名称、URL..." 
+                            class="w-full pl-10 pr-4 py-2 border border-border-light rounded-lg search-input-focus"
+                        >
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary"></i>
+                    </div>
+                </div>
+                
+                <!-- 筛选条件 -->
+                <div id="filter-section" class="flex flex-wrap items-center gap-3">
+                    <!-- 类型筛选 -->
+                    <div class="relative">
+                        <button id="type-filter-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                            <span>类型</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="type-dropdown" class="absolute top-full left-0 mt-1 w-48 bg-white border border-border-light rounded-lg shadow-lg filter-dropdown">
+                            <div class="p-2">
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="source-type" class="text-primary" value="all" checked>
+                                    <span>全部</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="source-type" class="text-primary" value="manual">
+                                    <span>手动配置</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="source-type" class="text-primary" value="ai_discovered">
+                                    <span>AI发现</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 状态筛选 -->
+                    <div class="relative">
+                        <button id="status-filter-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                            <span>状态</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="status-dropdown" class="absolute top-full left-0 mt-1 w-48 bg-white border border-border-light rounded-lg shadow-lg filter-dropdown">
+                            <div class="p-2">
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="source-status" class="text-primary" value="all" checked>
+                                    <span>全部</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="source-status" class="text-primary" value="enabled">
+                                    <span>已启用</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="source-status" class="text-primary" value="disabled">
+                                    <span>已禁用</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 关联度筛选 -->
+                    <div class="relative">
+                        <button id="relevance-filter-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                            <span>关联度</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="relevance-dropdown" class="absolute top-full left-0 mt-1 w-48 bg-white border border-border-light rounded-lg shadow-lg filter-dropdown">
+                            <div class="p-2">
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="relevance-level" class="text-primary" value="all" checked>
+                                    <span>全部</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="relevance-level" class="text-primary" value="high">
+                                    <span>高 (80-100)</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="relevance-level" class="text-primary" value="medium">
+                                    <span>中 (60-79)</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="relevance-level" class="text-primary" value="low">
+                                    <span>低 (0-59)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 排序选项 -->
+                    <select id="sort-select" class="px-4 py-2 border border-border-light rounded-lg focus:outline-none focus:border-primary">
+                        <option value="created-desc">创建时间 ↓</option>
+                        <option value="created-asc">创建时间 ↑</option>
+                        <option value="relevance-desc">关联度 ↓</option>
+                        <option value="relevance-asc">关联度 ↑</option>
+                        <option value="name-asc">名称 A-Z</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容展示区域 -->
+        <div id="content-area" class="bg-white rounded-lg shadow-card overflow-hidden mb-6">
+            <!-- 表格头部 -->
+            <div id="table-header" class="px-6 py-4 border-b border-border-light bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="select-all" class="rounded">
+                            <span class="text-sm text-text-secondary">全选</span>
+                        </label>
+                        <span class="text-sm text-text-secondary">共 <span class="font-medium text-text-primary">28</span> 个数据源</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="batch-delete" class="px-3 py-1 text-sm text-danger hover:bg-red-50 rounded disabled:opacity-50" disabled>
+                            <i class="fas fa-trash mr-1"></i>删除
+                        </button>
+                        <button id="batch-enable" class="px-3 py-1 text-sm text-success hover:bg-green-50 rounded disabled:opacity-50" disabled>
+                            <i class="fas fa-play mr-1"></i>启用
+                        </button>
+                        <button id="batch-disable" class="px-3 py-1 text-sm text-warning hover:bg-yellow-50 rounded disabled:opacity-50" disabled>
+                            <i class="fas fa-pause mr-1"></i>禁用
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 表格内容 -->
+            <div id="table-content" class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-border-light">
+                        <tr>
+                            <th class="w-12 px-6 py-3 text-left">
+                                <input type="checkbox" class="rounded">
+                            </th>
+                            <th class="w-56 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                数据源名称 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-32 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                类型 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-32 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                关联度 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                                URL
+                            </th>
+                            <th class="w-28 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                状态 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-40 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                创建时间 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-40 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                更新时间 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-56 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                                操作
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="sources-table-body" class="bg-white divide-y divide-border-light">
+                        <!-- 数据源行 1 -->
+                        <tr class="table-row-hover" data-source-id="source-001">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded source-checkbox">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">水务部官网</h3>
+                                        <p class="text-xs text-text-secondary mt-1">water.gov.cn</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                    手动配置
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex-1 relevance-bar">
+                                        <div class="relevance-fill" style="width: 92%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium text-text-primary w-12">92</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary max-w-xs truncate">
+                                https://www.mwr.gov.cn
+                            </td>
+                            <td class="px-6 py-4">
+                                <label class="switch">
+                                    <input type="checkbox" class="status-switch" checked data-source-id="source-001">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-01 10:30
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-15 09:15
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-source-btn text-primary hover:text-secondary text-sm" title="编辑" data-source-id="source-001">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-source-btn text-danger hover:text-red-600 text-sm" title="删除" data-source-id="source-001">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="adjust-relevance-btn text-warning hover:text-yellow-600 text-sm" title="调整关联度" data-source-id="source-001">
+                                        <i class="fas fa-sliders-h"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- 数据源行 2 -->
+                        <tr class="table-row-hover" data-source-id="source-002">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded source-checkbox">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">中国水网</h3>
+                                        <p class="text-xs text-text-secondary mt-1">h2o-china.com</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                                    AI发现
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex-1 relevance-bar">
+                                        <div class="relevance-fill" style="width: 85%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium text-text-primary w-12">85</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary max-w-xs truncate">
+                                https://www.h2o-china.com
+                            </td>
+                            <td class="px-6 py-4">
+                                <label class="switch">
+                                    <input type="checkbox" class="status-switch" checked data-source-id="source-002">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-02 14:20
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-15 08:45
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-source-btn text-primary hover:text-secondary text-sm" title="编辑" data-source-id="source-002">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-source-btn text-danger hover:text-red-600 text-sm" title="删除" data-source-id="source-002">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="adjust-relevance-btn text-warning hover:text-yellow-600 text-sm" title="调整关联度" data-source-id="source-002">
+                                        <i class="fas fa-sliders-h"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- 数据源行 3 -->
+                        <tr class="table-row-hover" data-source-id="source-003">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded source-checkbox">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">智慧水务</h3>
+                                        <p class="text-xs text-text-secondary mt-1">smart-water.com</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                    手动配置
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex-1 relevance-bar">
+                                        <div class="relevance-fill" style="width: 78%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium text-text-primary w-12">78</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary max-w-xs truncate">
+                                https://www.smart-water.com
+                            </td>
+                            <td class="px-6 py-4">
+                                <label class="switch">
+                                    <input type="checkbox" class="status-switch" data-source-id="source-003">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-03 09:15
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-14 16:30
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-source-btn text-primary hover:text-secondary text-sm" title="编辑" data-source-id="source-003">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-source-btn text-danger hover:text-red-600 text-sm" title="删除" data-source-id="source-003">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="adjust-relevance-btn text-warning hover:text-yellow-600 text-sm" title="调整关联度" data-source-id="source-003">
+                                        <i class="fas fa-sliders-h"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- 数据源行 4 -->
+                        <tr class="table-row-hover" data-source-id="source-004">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded source-checkbox">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">水利工程网</h3>
+                                        <p class="text-xs text-text-secondary mt-1">water-engineer.com</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                                    AI发现
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex-1 relevance-bar">
+                                        <div class="relevance-fill" style="width: 65%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium text-text-primary w-12">65</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary max-w-xs truncate">
+                                https://www.water-engineer.com
+                            </td>
+                            <td class="px-6 py-4">
+                                <label class="switch">
+                                    <input type="checkbox" class="status-switch" checked data-source-id="source-004">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-05 11:45
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-15 07:20
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-source-btn text-primary hover:text-secondary text-sm" title="编辑" data-source-id="source-004">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-source-btn text-danger hover:text-red-600 text-sm" title="删除" data-source-id="source-004">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="adjust-relevance-btn text-warning hover:text-yellow-600 text-sm" title="调整关联度" data-source-id="source-004">
+                                        <i class="fas fa-sliders-h"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- 数据源行 5 -->
+                        <tr class="table-row-hover" data-source-id="source-005">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded source-checkbox">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary">水环境监测</h3>
+                                        <p class="text-xs text-text-secondary mt-1">water-monitor.org</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                    手动配置
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex-1 relevance-bar">
+                                        <div class="relevance-fill" style="width: 45%"></div>
+                                    </div>
+                                    <span class="text-sm font-medium text-text-primary w-12">45</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary max-w-xs truncate">
+                                https://www.water-monitor.org
+                            </td>
+                            <td class="px-6 py-4">
+                                <label class="switch">
+                                    <input type="checkbox" class="status-switch" data-source-id="source-005">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-08 15:30
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">
+                                2024-01-14 13:15
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="edit-source-btn text-primary hover:text-secondary text-sm" title="编辑" data-source-id="source-005">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="delete-source-btn text-danger hover:text-red-600 text-sm" title="删除" data-source-id="source-005">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="adjust-relevance-btn text-warning hover:text-yellow-600 text-sm" title="调整关联度" data-source-id="source-005">
+                                        <i class="fas fa-sliders-h"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 分页区域 -->
+        <div id="pagination-area" class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-text-secondary">
+                    显示第 <span class="font-medium">1-10</span> 条，共 <span class="font-medium">28</span> 条
+                </span>
+                <select id="page-size-select" class="px-3 py-1 border border-border-light rounded text-sm focus:outline-none focus:border-primary">
+                    <option value="10">10条/页</option>
+                    <option value="20">20条/页</option>
+                    <option value="50">50条/页</option>
+                    <option value="100">100条/页</option>
+                </select>
+            </div>
+            
+            <div id="pagination-controls" class="flex items-center space-x-2">
+                <button id="prev-page" class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50 disabled:opacity-50" disabled>
+                    <i class="fas fa-chevron-left mr-1"></i>上一页
+                </button>
+                
+                <div class="flex items-center space-x-1">
+                    <button class="px-3 py-1 bg-primary text-white rounded text-sm">1</button>
+                    <button class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50">2</button>
+                    <button class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50">3</button>
+                </div>
+                
+                <button id="next-page" class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50">
+                    下一页<i class="fas fa-chevron-right ml-1"></i>
+                </button>
+                
+                <div class="flex items-center space-x-2 ml-4">
+                    <span class="text-sm text-text-secondary">跳转到</span>
+                    <input type="number" id="goto-page" min="1" max="3" class="w-16 px-2 py-1 border border-border-light rounded text-sm text-center focus:outline-none focus:border-primary">
+                    <span class="text-sm text-text-secondary">页</span>
+                    <button id="goto-btn" class="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-secondary">
+                        跳转
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- AI发现数据源审核弹窗 -->
+    <div id="ai-review-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="relative flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                <div class="p-6 border-b border-border-light">
+                    <h3 class="text-lg font-semibold text-text-primary">AI发现数据源审核</h3>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-text-primary">智慧水务观察</h4>
+                                    <p class="text-sm text-text-secondary mt-1">https://www.smart-water-watch.com</p>
+                                    <div class="flex items-center space-x-4 mt-2">
+                                        <span class="text-sm text-text-secondary">AI评估关联度: <span class="font-medium text-success">87</span></span>
+                                        <span class="text-sm text-text-secondary">发现时间: 2024-01-15 06:30</span>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="ai-approve-btn px-3 py-1 bg-success text-white rounded text-sm hover:bg-green-600" data-source-id="ai-source-001">
+                                        批准
+                                    </button>
+                                    <button class="ai-reject-btn px-3 py-1 bg-danger text-white rounded text-sm hover:bg-red-600" data-source-id="ai-source-001">
+                                        拒绝
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-text-primary">水务科技前沿</h4>
+                                    <p class="text-sm text-text-secondary mt-1">https://www.water-tech-frontier.com</p>
+                                    <div class="flex items-center space-x-4 mt-2">
+                                        <span class="text-sm text-text-secondary">AI评估关联度: <span class="font-medium text-warning">72</span></span>
+                                        <span class="text-sm text-text-secondary">发现时间: 2024-01-15 05:45</span>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="ai-approve-btn px-3 py-1 bg-success text-white rounded text-sm hover:bg-green-600" data-source-id="ai-source-002">
+                                        批准
+                                    </button>
+                                    <button class="ai-reject-btn px-3 py-1 bg-danger text-white rounded text-sm hover:bg-red-600" data-source-id="ai-source-002">
+                                        拒绝
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 border-t border-border-light flex justify-end space-x-3">
+                    <button id="ai-review-close" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增/编辑数据源弹窗 -->
+    <div id="source-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="relative flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-lg">
+                <div class="p-6 border-b border-border-light">
+                    <h3 id="source-modal-title" class="text-lg font-semibold text-text-primary">新增数据源</h3>
+                </div>
+                <form id="source-form" class="p-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="source-name" class="block text-sm font-medium text-text-primary mb-2">数据源名称 *</label>
+                            <input type="text" id="source-name" name="source-name" class="w-full px-3 py-2 border border-border-light rounded-lg search-input-focus" required>
+                        </div>
+                        <div>
+                            <label for="source-url" class="block text-sm font-medium text-text-primary mb-2">数据源URL *</label>
+                            <input type="url" id="source-url" name="source-url" class="w-full px-3 py-2 border border-border-light rounded-lg search-input-focus" required>
+                        </div>
+                        <div>
+                            <label for="source-type" class="block text-sm font-medium text-text-primary mb-2">数据源类型</label>
+                            <select id="source-type" name="source-type" class="w-full px-3 py-2 border border-border-light rounded-lg search-input-focus">
+                                <option value="manual">手动配置</option>
+                                <option value="ai_discovered">AI发现</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="source-relevance" class="block text-sm font-medium text-text-primary mb-2">关联度 (0-100)</label>
+                            <input type="number" id="source-relevance" name="source-relevance" min="0" max="100" value="70" class="w-full px-3 py-2 border border-border-light rounded-lg search-input-focus">
+                        </div>
+                        <div>
+                            <label for="source-enabled" class="block text-sm font-medium text-text-primary mb-2">启用状态</label>
+                            <label class="switch">
+                                <input type="checkbox" id="source-enabled" name="source-enabled" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+                <div class="p-6 border-t border-border-light flex justify-end space-x-3">
+                    <button id="source-cancel" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50">
+                        取消
+                    </button>
+                    <button id="source-save" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">
+                        保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 调整关联度弹窗 -->
+    <div id="relevance-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="relative flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div class="p-6 border-b border-border-light">
+                    <h3 class="text-lg font-semibold text-text-primary">调整关联度</h3>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="relevance-value" class="block text-sm font-medium text-text-primary mb-2">关联度值</label>
+                            <input type="range" id="relevance-value" min="0" max="100" value="70" class="w-full">
+                            <div class="flex justify-between text-sm text-text-secondary mt-1">
+                                <span>0</span>
+                                <span id="relevance-display">70</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="text-sm font-medium text-text-primary">当前关联度:</span>
+                                <span id="current-relevance" class="text-sm font-medium text-text-secondary">70</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm font-medium text-text-primary">新关联度:</span>
+                                <span id="new-relevance" class="text-sm font-medium text-primary">70</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 border-t border-border-light flex justify-end space-x-3">
+                    <button id="relevance-cancel" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50">
+                        取消
+                    </button>
+                    <button id="relevance-save" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">
+                        保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div id="delete-modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="relative flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div class="p-6 border-b border-border-light">
+                    <h3 class="text-lg font-semibold text-text-primary">确认删除</h3>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-3">
+                            <i class="fas fa-exclamation-triangle text-warning text-xl mt-1"></i>
+                            <div>
+                                <p class="text-text-primary font-medium">您确定要删除这个数据源吗？</p>
+                                <p class="text-sm text-text-secondary mt-1">删除后将无法恢复，请谨慎操作。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 border-t border-border-light flex justify-end space-x-3">
+                    <button id="delete-cancel" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50">
+                        取消
+                    </button>
+                    <button id="delete-confirm" class="px-4 py-2 bg-danger text-white rounded-lg hover:bg-red-600">
+                        删除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentEditingSourceId = null;
+            let currentDeletingSourceId = null;
+            let currentRelevanceSourceId = null;
+
+            // 侧边栏切换功能
+            document.querySelector('#sidebar-toggle').addEventListener('click', function() {
+                const sidebar = document.querySelector('#sidebar');
+                const mainContent = document.querySelector('#main-content');
+                const sidebarTexts = document.querySelectorAll('.sidebar-text');
+                
+                if (sidebar.classList.contains('sidebar-expanded')) {
+                    sidebar.classList.remove('sidebar-expanded');
+                    sidebar.classList.add('sidebar-collapsed');
+                    mainContent.classList.remove('ml-52');
+                    mainContent.classList.add('ml-12');
+                    sidebarTexts.forEach(text => text.style.display = 'none');
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                    sidebar.classList.add('sidebar-expanded');
+                    mainContent.classList.remove('ml-12');
+                    mainContent.classList.add('ml-52');
+                    sidebarTexts.forEach(text => text.style.display = 'block');
+                }
+            });
+
+            // 导航菜单点击事件
+            document.querySelector('#nav-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DASHBOARD.html';
+            });
+
+            document.querySelector('#nav-categories').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_CATEGORY.html';
+            });
+
+            document.querySelector('#nav-update-time').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_UPDATE_TIME.html';
+            });
+
+            document.querySelector('#nav-ai-rules').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_AI_RULES.html';
+            });
+
+            document.querySelector('#nav-users').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_USER_PERMISSION.html';
+            });
+
+            document.querySelector('#nav-api').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_API_MANAGE.html';
+            });
+
+            // 面包屑导航
+            document.querySelector('#breadcrumb-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DASHBOARD.html';
+            });
+
+            // 退出登录
+            document.querySelector('#logout-btn').addEventListener('click', function() {
+                if (confirm('确定要退出登录吗？')) {
+                    window.location.href = 'P-ADMIN_LOGIN.html';
+                }
+            });
+
+            // 筛选下拉菜单功能
+            const filterButtons = ['type', 'status', 'relevance'];
+            
+            filterButtons.forEach(type => {
+                const button = document.querySelector(`#${type}-filter-btn`);
+                const dropdown = document.querySelector(`#${type}-dropdown`);
+                
+                button.addEventListener('click', function() {
+                    // 关闭其他下拉菜单
+                    filterButtons.forEach(otherType => {
+                        if (otherType !== type) {
+                            document.querySelector(`#${otherType}-dropdown`).classList.remove('show');
+                        }
+                    });
+                    
+                    // 切换当前下拉菜单
+                    dropdown.classList.toggle('show');
+                });
+            });
+
+            // 点击外部关闭下拉菜单
+            document.addEventListener('click', function(event) {
+                filterButtons.forEach(type => {
+                    const button = document.querySelector(`#${type}-filter-btn`);
+                    const dropdown = document.querySelector(`#${type}-dropdown`);
+                    
+                    if (!button.contains(event.target) && !dropdown.contains(event.target)) {
+                        dropdown.classList.remove('show');
+                    }
+                });
+            });
+
+            // 全选功能
+            document.querySelector('#select-all').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.source-checkbox');
+                const batchButtons = document.querySelectorAll('#batch-delete, #batch-enable, #batch-disable');
+                
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                
+                // 更新批量操作按钮状态
+                const checkedCount = document.querySelectorAll('.source-checkbox:checked').length;
+                batchButtons.forEach(button => {
+                    button.disabled = checkedCount === 0;
+                });
+            });
+
+            // 监听单个复选框变化
+            document.querySelectorAll('.source-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const totalCheckboxes = document.querySelectorAll('.source-checkbox').length;
+                    const checkedCheckboxes = document.querySelectorAll('.source-checkbox:checked').length;
+                    const selectAllCheckbox = document.querySelector('#select-all');
+                    const batchButtons = document.querySelectorAll('#batch-delete, #batch-enable, #batch-disable');
+                    
+                    // 更新全选复选框状态
+                    selectAllCheckbox.checked = checkedCheckboxes === totalCheckboxes;
+                    selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+                    
+                    // 更新批量操作按钮状态
+                    batchButtons.forEach(button => {
+                        button.disabled = checkedCheckboxes === 0;
+                    });
+                });
+            });
+
+            // 搜索功能
+            document.querySelector('#keyword-search').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    console.log('搜索关键词:', this.value);
+                    // 执行搜索逻辑
+                }
+            });
+
+            // 排序功能
+            document.querySelector('#sort-select').addEventListener('change', function() {
+                console.log('排序方式:', this.value);
+                // 执行排序逻辑
+            });
+
+            // 分页功能
+            document.querySelector('#goto-btn').addEventListener('click', function() {
+                const pageNumber = document.querySelector('#goto-page').value;
+                if (pageNumber && pageNumber >= 1 && pageNumber <= 3) {
+                    console.log('跳转到页面:', pageNumber);
+                    // 跳转到指定页面
+                }
+            });
+
+            document.querySelector('#page-size-select').addEventListener('change', function() {
+                console.log('每页显示:', this.value);
+                // 改变每页显示数量
+            });
+
+            // AI发现数据源审核弹窗
+            document.querySelector('#ai-review-btn').addEventListener('click', function() {
+                document.querySelector('#ai-review-modal').classList.remove('hidden');
+            });
+
+            document.querySelector('#ai-review-close').addEventListener('click', function() {
+                document.querySelector('#ai-review-modal').classList.add('hidden');
+            });
+
+            // AI数据源审核操作
+            document.querySelectorAll('.ai-approve-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const sourceId = this.dataset.sourceId;
+                    console.log('批准AI数据源:', sourceId);
+                    // 执行批准逻辑
+                    this.closest('.bg-blue-50').remove();
+                });
+            });
+
+            document.querySelectorAll('.ai-reject-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const sourceId = this.dataset.sourceId;
+                    console.log('拒绝AI数据源:', sourceId);
+                    // 执行拒绝逻辑
+                    this.closest('.bg-blue-50').remove();
+                });
+            });
+
+            // 新增数据源弹窗
+            document.querySelector('#add-source-btn').addEventListener('click', function() {
+                currentEditingSourceId = null;
+                document.querySelector('#source-modal-title').textContent = '新增数据源';
+                document.querySelector('#source-form').reset();
+                document.querySelector('#source-relevance').value = 70;
+                document.querySelector('#source-enabled').checked = true;
+                document.querySelector('#source-modal').classList.remove('hidden');
+            });
+
+            // 编辑数据源
+            document.querySelectorAll('.edit-source-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentEditingSourceId = this.dataset.sourceId;
+                    document.querySelector('#source-modal-title').textContent = '编辑数据源';
+                    
+                    // 模拟加载数据源数据
+                    const mockData = {
+                        'source-001': { name: '水务部官网', url: 'https://www.mwr.gov.cn', type: 'manual', relevance: 92, enabled: true },
+                        'source-002': { name: '中国水网', url: 'https://www.h2o-china.com', type: 'ai_discovered', relevance: 85, enabled: true },
+                        'source-003': { name: '智慧水务', url: 'https://www.smart-water.com', type: 'manual', relevance: 78, enabled: false },
+                        'source-004': { name: '水利工程网', url: 'https://www.water-engineer.com', type: 'ai_discovered', relevance: 65, enabled: true },
+                        'source-005': { name: '水环境监测', url: 'https://www.water-monitor.org', type: 'manual', relevance: 45, enabled: false }
+                    };
+                    
+                    const data = mockData[currentEditingSourceId];
+                    if (data) {
+                        document.querySelector('#source-name').value = data.name;
+                        document.querySelector('#source-url').value = data.url;
+                        document.querySelector('#source-type').value = data.type;
+                        document.querySelector('#source-relevance').value = data.relevance;
+                        document.querySelector('#source-enabled').checked = data.enabled;
+                    }
+                    
+                    document.querySelector('#source-modal').classList.remove('hidden');
+                });
+            });
+
+            // 关闭数据源弹窗
+            document.querySelector('#source-cancel').addEventListener('click', function() {
+                document.querySelector('#source-modal').classList.add('hidden');
+            });
+
+            // 保存数据源
+            document.querySelector('#source-save').addEventListener('click', function() {
+                const formData = new FormData(document.querySelector('#source-form'));
+                const sourceData = {
+                    name: formData.get('source-name'),
+                    url: formData.get('source-url'),
+                    type: formData.get('source-type'),
+                    relevance: parseInt(formData.get('source-relevance')),
+                    enabled: formData.get('source-enabled') === 'on'
+                };
+                
+                if (currentEditingSourceId) {
+                    console.log('更新数据源:', currentEditingSourceId, sourceData);
+                } else {
+                    console.log('新增数据源:', sourceData);
+                }
+                
+                document.querySelector('#source-modal').classList.add('hidden');
+                // 刷新数据源列表
+            });
+
+            // 调整关联度弹窗
+            document.querySelectorAll('.adjust-relevance-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentRelevanceSourceId = this.dataset.sourceId;
+                    
+                    // 获取当前关联度
+                    const row = this.closest('tr');
+                    const currentValue = parseInt(row.querySelector('.relevance-fill').style.width) || 70;
+                    
+                    document.querySelector('#relevance-value').value = currentValue;
+                    document.querySelector('#relevance-display').textContent = currentValue;
+                    document.querySelector('#current-relevance').textContent = currentValue;
+                    document.querySelector('#new-relevance').textContent = currentValue;
+                    
+                    document.querySelector('#relevance-modal').classList.remove('hidden');
+                });
+            });
+
+            // 关联度滑块
+            document.querySelector('#relevance-value').addEventListener('input', function() {
+                const value = this.value;
+                document.querySelector('#relevance-display').textContent = value;
+                document.querySelector('#new-relevance').textContent = value;
+            });
+
+            // 关闭关联度弹窗
+            document.querySelector('#relevance-cancel').addEventListener('click', function() {
+                document.querySelector('#relevance-modal').classList.add('hidden');
+            });
+
+            // 保存关联度
+            document.querySelector('#relevance-save').addEventListener('click', function() {
+                const newValue = parseInt(document.querySelector('#relevance-value').value);
+                console.log('更新关联度:', currentRelevanceSourceId, newValue);
+                
+                // 更新表格中的关联度显示
+                const row = document.querySelector(`tr[data-source-id="${currentRelevanceSourceId}"]`);
+                if (row) {
+                    const relevanceFill = row.querySelector('.relevance-fill');
+                    const relevanceText = row.querySelector('.relevance-fill').nextElementSibling;
+                    relevanceFill.style.width = newValue + '%';
+                    relevanceText.textContent = newValue;
+                }
+                
+                document.querySelector('#relevance-modal').classList.add('hidden');
+            });
+
+            // 删除数据源
+            document.querySelectorAll('.delete-source-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentDeletingSourceId = this.dataset.sourceId;
+                    document.querySelector('#delete-modal').classList.remove('hidden');
+                });
+            });
+
+            // 关闭删除弹窗
+            document.querySelector('#delete-cancel').addEventListener('click', function() {
+                document.querySelector('#delete-modal').classList.add('hidden');
+            });
+
+            // 确认删除
+            document.querySelector('#delete-confirm').addEventListener('click', function() {
+                console.log('删除数据源:', currentDeletingSourceId);
+                
+                // 从表格中移除行
+                const row = document.querySelector(`tr[data-source-id="${currentDeletingSourceId}"]`);
+                if (row) {
+                    row.remove();
+                }
+                
+                document.querySelector('#delete-modal').classList.add('hidden');
+            });
+
+            // 启用/禁用开关
+            document.querySelectorAll('.status-switch').forEach(switchElement => {
+                switchElement.addEventListener('change', function() {
+                    const sourceId = this.dataset.sourceId;
+                    const isEnabled = this.checked;
+                    console.log('切换数据源状态:', sourceId, isEnabled ? '启用' : '禁用');
+                    
+                    // 这里可以添加状态切换的逻辑
+                });
+            });
+
+            // 批量操作
+            document.querySelector('#batch-delete').addEventListener('click', function() {
+                const selectedSources = Array.from(document.querySelectorAll('.source-checkbox:checked')).map(cb => 
+                    cb.closest('tr').dataset.sourceId
+                );
+                if (selectedSources.length > 0 && confirm(`确定要删除选中的 ${selectedSources.length} 个数据源吗？`)) {
+                    console.log('批量删除:', selectedSources);
+                    // 执行批量删除逻辑
+                }
+            });
+
+            document.querySelector('#batch-enable').addEventListener('click', function() {
+                const selectedSources = Array.from(document.querySelectorAll('.source-checkbox:checked')).map(cb => 
+                    cb.closest('tr').dataset.sourceId
+                );
+                console.log('批量启用:', selectedSources);
+                // 执行批量启用逻辑
+            });
+
+            document.querySelector('#batch-disable').addEventListener('click', function() {
+                const selectedSources = Array.from(document.querySelectorAll('.source-checkbox:checked')).map(cb => 
+                    cb.closest('tr').dataset.sourceId
+                );
+                console.log('批量禁用:', selectedSources);
+                // 执行批量禁用逻辑
+            });
+
+            // 点击模态框背景关闭
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', function() {
+                    this.closest('.fixed.inset-0.z-50').classList.add('hidden');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>更新时间设置 - 水脉通</title>
+    <script src="https://unpkg.byted-static.com/coze/space_ppt_lib/1.0.3-alpha.12/lib/tailwindcss.js"></script>
+    <script src="https://unpkg.byted-static.com/fortawesome/fontawesome-free/6.7.2/js/all.min.js" data-auto-replace-svg="nest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#1e40af',
+                        tertiary: '#3b82f6',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        'text-primary': '#1f2937',
+                        'text-secondary': '#6b7280',
+                        'bg-light': '#f8fafc',
+                        'border-light': '#e5e7eb'
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-collapsed {
+            width: 48px;
+        }
+        
+        .sidebar-expanded {
+            width: 200px;
+        }
+        
+        .nav-item-active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+        }
+        
+        .form-input-focus:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .time-input {
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="bg-bg-light min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header id="top-navbar" class="fixed top-0 left-0 right-0 bg-white border-b border-border-light h-16 z-50">
+        <div class="flex items-center justify-between h-full px-6">
+            <!-- 左侧：Logo和系统名称 -->
+            <div id="navbar-left" class="flex items-center space-x-4">
+                <button id="sidebar-toggle" class="p-2 rounded-lg hover:bg-gray-100 lg:hidden">
+                    <i class="fas fa-bars text-gray-600"></i>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div id="logo" class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-tint text-white text-sm"></i>
+                    </div>
+                    <h1 id="site-title" class="text-xl font-semibold text-text-primary hidden sm:block">水脉通管理系统</h1>
+                </div>
+            </div>
+            
+            <!-- 右侧：管理员信息和退出登录 -->
+            <div id="navbar-right" class="flex items-center space-x-4">
+                <div id="admin-info" class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <span class="text-sm text-text-primary hidden sm:block">管理员</span>
+                </div>
+                <button id="logout-btn" class="px-4 py-2 text-sm text-text-secondary hover:text-danger border border-border-light rounded-lg hover:bg-red-50">
+                    <i class="fas fa-sign-out-alt mr-1"></i>退出登录
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 左侧菜单 -->
+    <aside id="sidebar" class="fixed left-0 top-16 bottom-0 bg-white border-r border-border-light sidebar-expanded transition-all duration-300 z-40">
+        <nav id="sidebar-nav" class="p-4 space-y-2">
+            <a href="#" id="nav-dashboard" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-home w-5"></i>
+                <span class="sidebar-text">后台首页</span>
+            </a>
+            <a href="#" id="nav-category" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-folder w-5"></i>
+                <span class="sidebar-text">资讯类别管理</span>
+            </a>
+            <a href="#" id="nav-update-time" class="flex items-center space-x-3 px-3 py-2 rounded-lg nav-item-active">
+                <i class="fas fa-clock w-5"></i>
+                <span class="sidebar-text">更新时间设置</span>
+            </a>
+            <a href="#" id="nav-data-source" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-rss w-5"></i>
+                <span class="sidebar-text">数据源配置</span>
+            </a>
+            <a href="#" id="nav-ai-rules" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-brain w-5"></i>
+                <span class="sidebar-text">AI筛选规则设置</span>
+            </a>
+            <a href="#" id="nav-users" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-users w-5"></i>
+                <span class="sidebar-text">用户权限管理</span>
+            </a>
+            <a href="#" id="nav-api" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-code w-5"></i>
+                <span class="sidebar-text">API生成与管理</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main id="main-content" class="ml-52 mt-16 p-6 transition-all duration-300">
+        <!-- 页面头部 -->
+        <div id="page-header" class="mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 id="page-title" class="text-2xl font-semibold text-text-primary">更新时间设置</h2>
+                    <nav id="breadcrumb" class="mt-1">
+                        <ol class="flex items-center space-x-2 text-sm text-text-secondary">
+                            <li><a href="#" id="breadcrumb-dashboard" class="hover:text-primary">后台首页</a></li>
+                            <li><i class="fas fa-chevron-right text-xs"></i></li>
+                            <li class="text-text-primary">更新时间设置</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表单区域 -->
+        <div id="form-container" class="bg-white rounded-lg shadow-card p-6">
+            <div class="max-w-md">
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-text-primary mb-2">每日更新时间设置</h3>
+                    <p class="text-sm text-text-secondary">设置系统每日自动抓取和更新资讯的时间</p>
+                </div>
+                
+                <form id="update-time-form" class="space-y-6">
+                    <div class="space-y-2">
+                        <label for="update-time" class="block text-sm font-medium text-text-primary">
+                            每日更新时间 <span class="text-danger">*</span>
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="time" 
+                                id="update-time" 
+                                name="update-time" 
+                                class="w-full px-4 py-3 border border-border-light rounded-lg form-input-focus time-input"
+                                value="08:00"
+                                required
+                            >
+                            <i class="fas fa-clock absolute right-4 top-1/2 transform -translate-y-1/2 text-text-secondary"></i>
+                        </div>
+                        <p class="text-xs text-text-secondary">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            系统将在每日指定时间自动执行资讯抓取和更新操作
+                        </p>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label for="update-frequency" class="block text-sm font-medium text-text-primary">
+                            更新频率
+                        </label>
+                        <select 
+                            id="update-frequency" 
+                            name="update-frequency" 
+                            class="w-full px-4 py-3 border border-border-light rounded-lg form-input-focus"
+                        >
+                            <option value="daily">每日更新</option>
+                            <option value="twice">每日两次（上午、下午）</option>
+                            <option value="hourly">每小时更新</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-text-primary">
+                            当前设置
+                        </label>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-text-secondary">每日更新时间：</span>
+                                <span id="current-time-display" class="text-sm font-medium text-text-primary">08:00</span>
+                            </div>
+                            <div class="flex items-center justify-between mt-2">
+                                <span class="text-sm text-text-secondary">更新频率：</span>
+                                <span id="current-frequency-display" class="text-sm font-medium text-text-primary">每日更新</span>
+                            </div>
+                            <div class="flex items-center justify-between mt-2">
+                                <span class="text-sm text-text-secondary">上次更新：</span>
+                                <span class="text-sm text-text-secondary">2024-01-15 08:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4 pt-4 border-t border-border-light">
+                        <button 
+                            type="submit" 
+                            id="save-btn" 
+                            class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-secondary flex items-center space-x-2 transition-colors duration-200"
+                        >
+                            <i class="fas fa-save"></i>
+                            <span>保存设置</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            id="reset-btn" 
+                            class="px-6 py-3 border border-border-light text-text-secondary rounded-lg hover:bg-gray-50 flex items-center space-x-2 transition-colors duration-200"
+                        >
+                            <i class="fas fa-undo"></i>
+                            <span>重置</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- 通知提示 -->
+    <div id="notification" class="notification bg-white border border-border-light rounded-lg shadow-lg p-4 max-w-sm">
+        <div class="flex items-center space-x-3">
+            <div id="notification-icon" class="w-8 h-8 bg-success rounded-full flex items-center justify-center">
+                <i class="fas fa-check text-white text-sm"></i>
+            </div>
+            <div>
+                <h4 id="notification-title" class="text-sm font-medium text-text-primary">保存成功</h4>
+                <p id="notification-message" class="text-xs text-text-secondary mt-1">更新时间设置已成功保存</p>
+            </div>
+            <button id="notification-close" class="text-text-secondary hover:text-text-primary">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 侧边栏切换功能
+            document.querySelector('#sidebar-toggle').addEventListener('click', function() {
+                const sidebar = document.querySelector('#sidebar');
+                const mainContent = document.querySelector('#main-content');
+                const sidebarTexts = document.querySelectorAll('.sidebar-text');
+                
+                if (sidebar.classList.contains('sidebar-expanded')) {
+                    sidebar.classList.remove('sidebar-expanded');
+                    sidebar.classList.add('sidebar-collapsed');
+                    mainContent.classList.remove('ml-52');
+                    mainContent.classList.add('ml-12');
+                    sidebarTexts.forEach(text => text.style.display = 'none');
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                    sidebar.classList.add('sidebar-expanded');
+                    mainContent.classList.remove('ml-12');
+                    mainContent.classList.add('ml-52');
+                    sidebarTexts.forEach(text => text.style.display = 'block');
+                }
+            });
+
+            // 导航菜单点击事件
+            document.querySelector('#nav-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DASHBOARD.html';
+            });
+
+            document.querySelector('#nav-category').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_CATEGORY.html';
+            });
+
+            document.querySelector('#nav-data-source').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DATA_SOURCE.html';
+            });
+
+            document.querySelector('#nav-ai-rules').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_AI_RULES.html';
+            });
+
+            document.querySelector('#nav-users').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_USER_PERMISSION.html';
+            });
+
+            document.querySelector('#nav-api').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_API_MANAGE.html';
+            });
+
+            // 面包屑导航点击事件
+            document.querySelector('#breadcrumb-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DASHBOARD.html';
+            });
+
+            // 退出登录按钮
+            document.querySelector('#logout-btn').addEventListener('click', function() {
+                if (confirm('确定要退出登录吗？')) {
+                    window.location.href = 'P-ADMIN_LOGIN.html';
+                }
+            });
+
+            // 表单提交事件
+            document.querySelector('#update-time-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const updateTime = document.querySelector('#update-time').value;
+                const updateFrequency = document.querySelector('#update-frequency').value;
+                
+                // 模拟保存操作
+                const saveBtn = document.querySelector('#save-btn');
+                const originalText = saveBtn.innerHTML;
+                
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>保存中...</span>';
+                saveBtn.disabled = true;
+                
+                setTimeout(() => {
+                    // 更新当前设置显示
+                    updateCurrentSettingsDisplay(updateTime, updateFrequency);
+                    
+                    // 显示成功通知
+                    showNotification('success', '保存成功', '更新时间设置已成功保存');
+                    
+                    // 恢复按钮状态
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                }, 1000);
+            });
+
+            // 重置按钮事件
+            document.querySelector('#reset-btn').addEventListener('click', function() {
+                // 重置表单为默认值
+                document.querySelector('#update-time').value = '08:00';
+                document.querySelector('#update-frequency').value = 'daily';
+                
+                // 更新显示
+                updateCurrentSettingsDisplay('08:00', 'daily');
+                
+                showNotification('info', '已重置', '设置已恢复为默认值');
+            });
+
+            // 通知关闭按钮
+            document.querySelector('#notification-close').addEventListener('click', function() {
+                hideNotification();
+            });
+
+            // 通知自动关闭
+            let notificationTimer;
+            function autoHideNotification() {
+                notificationTimer = setTimeout(() => {
+                    hideNotification();
+                }, 3000);
+            }
+
+            // 更新当前设置显示
+            function updateCurrentSettingsDisplay(time, frequency) {
+                document.querySelector('#current-time-display').textContent = time;
+                
+                const frequencyText = {
+                    'daily': '每日更新',
+                    'twice': '每日两次（上午、下午）',
+                    'hourly': '每小时更新'
+                };
+                
+                document.querySelector('#current-frequency-display').textContent = frequencyText[frequency] || frequency;
+            }
+
+            // 显示通知
+            function showNotification(type, title, message) {
+                const notification = document.querySelector('#notification');
+                const icon = document.querySelector('#notification-icon');
+                const titleEl = document.querySelector('#notification-title');
+                const messageEl = document.querySelector('#notification-message');
+                
+                // 清除之前的定时器
+                if (notificationTimer) {
+                    clearTimeout(notificationTimer);
+                }
+                
+                // 设置通知类型和内容
+                icon.className = 'w-8 h-8 rounded-full flex items-center justify-center';
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                
+                switch(type) {
+                    case 'success':
+                        icon.classList.add('bg-success');
+                        icon.innerHTML = '<i class="fas fa-check text-white text-sm"></i>';
+                        break;
+                    case 'error':
+                        icon.classList.add('bg-danger');
+                        icon.innerHTML = '<i class="fas fa-exclamation text-white text-sm"></i>';
+                        break;
+                    case 'info':
+                        icon.classList.add('bg-info');
+                        icon.innerHTML = '<i class="fas fa-info text-white text-sm"></i>';
+                        break;
+                    case 'warning':
+                        icon.classList.add('bg-warning');
+                        icon.innerHTML = '<i class="fas fa-exclamation-triangle text-white text-sm"></i>';
+                        break;
+                }
+                
+                // 显示通知
+                notification.classList.add('show');
+                
+                // 设置自动关闭
+                autoHideNotification();
+            }
+
+            // 隐藏通知
+            function hideNotification() {
+                const notification = document.querySelector('#notification');
+                notification.classList.remove('show');
+            }
+
+            // 时间输入框变化时更新显示
+            document.querySelector('#update-time').addEventListener('change', function() {
+                const frequency = document.querySelector('#update-frequency').value;
+                updateCurrentSettingsDisplay(this.value, frequency);
+            });
+
+            // 频率选择变化时更新显示
+            document.querySelector('#update-frequency').addEventListener('change', function() {
+                const time = document.querySelector('#update-time').value;
+                updateCurrentSettingsDisplay(time, this.value);
+            });
+        });
+    </script>
+</body>
+</html>

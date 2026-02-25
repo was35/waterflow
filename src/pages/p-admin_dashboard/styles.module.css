@@ -1,0 +1,33 @@
+
+
+.pageWrapper {
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.sidebarCollapsed {
+  width: 48px;
+}
+
+.sidebarExpanded {
+  width: 200px;
+}
+
+.navItemActive {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border-right: 3px solid #2563eb;
+}
+
+.cardHover:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+.quickActionBtn:hover {
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+

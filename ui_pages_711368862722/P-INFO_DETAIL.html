@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水脉通 - 资讯详情</title>
+    <script src="https://unpkg.byted-static.com/coze/space_ppt_lib/1.0.3-alpha.12/lib/tailwindcss.js"></script>
+    <script src="https://unpkg.byted-static.com/fortawesome/fontawesome-free/6.7.2/js/all.min.js" data-auto-replace-svg="nest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#1e40af',
+                        tertiary: '#3b82f6',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        'text-primary': '#1f2937',
+                        'text-secondary': '#6b7280',
+                        'bg-light': '#f8fafc',
+                        'border-light': '#e5e7eb'
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-collapsed {
+            width: 48px;
+        }
+        
+        .sidebar-expanded {
+            width: 200px;
+        }
+        
+        .nav-item-active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+        }
+        
+        .search-input-focus:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .article-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        
+        .article-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 24px 0 16px 0;
+        }
+        
+        .article-content h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 20px 0 12px 0;
+        }
+        
+        .article-content p {
+            margin: 16px 0;
+            line-height: 1.8;
+            color: #374151;
+        }
+        
+        .article-content ul, .article-content ol {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+        
+        .article-content li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-modal.show {
+            display: flex;
+        }
+        
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-bg-light min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header id="top-navbar" class="fixed top-0 left-0 right-0 bg-white border-b border-border-light h-16 z-50">
+        <div class="flex items-center justify-between h-full px-6">
+            <!-- 左侧：Logo和网站名称 -->
+            <div id="navbar-left" class="flex items-center space-x-4">
+                <button id="sidebar-toggle" class="p-2 rounded-lg hover:bg-gray-100 lg:hidden">
+                    <i class="fas fa-bars text-gray-600"></i>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div id="logo" class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-tint text-white text-sm"></i>
+                    </div>
+                    <h1 id="site-title" class="text-xl font-semibold text-text-primary hidden sm:block">水脉通</h1>
+                </div>
+            </div>
+            
+            <!-- 中间：全局搜索框 -->
+            <div id="navbar-center" class="flex-1 max-w-md mx-8 hidden md:block">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="global-search" 
+                        placeholder="搜索水务资讯..." 
+                        class="w-full pl-10 pr-4 py-2 border border-border-light rounded-lg search-input-focus"
+                    >
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary"></i>
+                </div>
+            </div>
+            
+            <!-- 右侧：用户操作区 -->
+            <div id="navbar-right" class="flex items-center space-x-4">
+                <button id="notification-btn" class="p-2 rounded-lg hover:bg-gray-100 relative">
+                    <i class="fas fa-bell text-gray-600"></i>
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-danger rounded-full"></span>
+                </button>
+                <div id="user-menu" class="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded-lg p-2">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <span class="text-sm text-text-primary hidden sm:block">管理员</span>
+                    <i class="fas fa-chevron-down text-xs text-text-secondary"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 左侧菜单 -->
+    <aside id="sidebar" class="fixed left-0 top-16 bottom-0 bg-white border-r border-border-light sidebar-expanded transition-all duration-300 z-40">
+        <nav id="sidebar-nav" class="p-4 space-y-2">
+            <a href="#" id="nav-dashboard" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-home w-5"></i>
+                <span class="sidebar-text">首页</span>
+            </a>
+            <a href="#" id="nav-news" class="flex items-center space-x-3 px-3 py-2 rounded-lg nav-item-active">
+                <i class="fas fa-newspaper w-5"></i>
+                <span class="sidebar-text">资讯列表</span>
+            </a>
+            <a href="#" id="nav-categories" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-folder w-5"></i>
+                <span class="sidebar-text">分类管理</span>
+            </a>
+            <a href="#" id="nav-sources" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-rss w-5"></i>
+                <span class="sidebar-text">数据源</span>
+            </a>
+            <a href="#" id="nav-ai-rules" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-brain w-5"></i>
+                <span class="sidebar-text">AI规则</span>
+            </a>
+            <a href="#" id="nav-users" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-users w-5"></i>
+                <span class="sidebar-text">用户管理</span>
+            </a>
+            <a href="#" id="nav-api" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-code w-5"></i>
+                <span class="sidebar-text">API管理</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main id="main-content" class="ml-52 mt-16 p-6 transition-all duration-300">
+        <!-- 页面头部 -->
+        <div id="page-header" class="mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 id="page-title" class="text-2xl font-semibold text-text-primary">2024年水务行业发展趋势分析报告正式发布</h2>
+                    <nav id="breadcrumb" class="mt-1">
+                        <ol class="flex items-center space-x-2 text-sm text-text-secondary">
+                            <li><a href="#" id="breadcrumb-home" class="hover:text-primary">首页</a></li>
+                            <li><i class="fas fa-chevron-right text-xs"></i></li>
+                            <li><a href="#" id="breadcrumb-list" class="hover:text-primary">资讯列表</a></li>
+                            <li><i class="fas fa-chevron-right text-xs"></i></li>
+                            <li class="text-text-primary">2024年水务行业发展趋势分析报告正式发布</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div id="page-actions" class="flex items-center space-x-3">
+                    <button id="back-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                        <i class="fas fa-arrow-left text-sm"></i>
+                        <span>返回</span>
+                    </button>
+                    <button id="favorite-btn" class="px-4 py-2 bg-warning text-white rounded-lg hover:bg-yellow-600 flex items-center space-x-2">
+                        <i class="fas fa-star text-sm"></i>
+                        <span>收藏</span>
+                    </button>
+                    <button id="share-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary flex items-center space-x-2">
+                        <i class="fas fa-share text-sm"></i>
+                        <span>分享</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 资讯元数据区 -->
+        <div id="article-metadata" class="bg-white rounded-lg shadow-card p-6 mb-6">
+            <div class="flex flex-wrap items-center gap-6">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-building text-text-secondary"></i>
+                    <span class="text-text-secondary">来源：</span>
+                    <span class="text-text-primary font-medium">水务部官网</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-calendar text-text-secondary"></i>
+                    <span class="text-text-secondary">发布时间：</span>
+                    <span class="text-text-primary font-medium">2024-01-15 09:30</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-user text-text-secondary"></i>
+                    <span class="text-text-secondary">作者：</span>
+                    <span class="text-text-primary font-medium">水务行业研究团队</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-eye text-text-secondary"></i>
+                    <span class="text-text-secondary">阅读量：</span>
+                    <span class="text-text-primary font-medium">1,234</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-folder text-text-secondary"></i>
+                    <span class="text-text-secondary">分类：</span>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                        水务政策
+                    </span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-brain text-text-secondary"></i>
+                    <span class="text-text-secondary">AI质量评分：</span>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                        92分
+                    </span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-tags text-text-secondary"></i>
+                    <span class="text-text-secondary">AI主题：</span>
+                    <div class="flex space-x-1">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                            行业趋势
+                        </span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
+                            数字化转型
+                        </span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-teal-100 text-teal-800">
+                            智慧水务
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 资讯内容区 -->
+        <div id="article-content" class="bg-white rounded-lg shadow-card p-6 mb-6">
+            <div class="article-content">
+                <div class="mb-6">
+                    <img src="https://s.coze.cn/image/So0tPS9TcTc/" 
+                         alt="水务报告封面" 
+                         class="w-full max-w-2xl mx-auto cursor-pointer"
+                         data-category="商业科技"
+                         id="main-image">
+                </div>
+                
+                <p class="text-lg text-text-primary leading-relaxed mb-6">
+                    近日，由国家水务部组织编写的《2024年水务行业发展趋势分析报告》正式发布。该报告全面分析了当前水务行业的发展现状，深入探讨了未来一年的发展趋势，并为行业从业者提供了具有前瞻性的指导建议。
+                </p>
+                
+                <h2>一、行业发展现状</h2>
+                <p>
+                    2023年，我国水务行业在政策推动、技术创新和市场需求的多重驱动下，呈现出稳步发展的良好态势。据统计，全年水务行业投资规模达到1.2万亿元，同比增长8.5%。其中，智慧水务、水资源管理、污水处理等领域成为投资热点。
+                </p>
+                
+                <img src="https://s.coze.cn/image/oUvtIrpgE9c/" 
+                     alt="智慧水务系统界面" 
+                     class="w-full max-w-2xl mx-auto cursor-pointer"
+                     data-category="商业科技">
+                
+                <h2>二、2024年主要发展趋势</h2>
+                
+                <h3>1. 数字化转型加速推进</h3>
+                <p>
+                    随着物联网、大数据、人工智能等技术的不断成熟，水务行业的数字化转型将进入快车道。预计到2024年底，全国80%以上的大中型水务企业将实现不同程度的数字化改造。
+                </p>
+                
+                <h3>2. 智慧水务成为主流</h3>
+                <p>
+                    智慧水务解决方案将在供排水管理、水质监测、漏损控制等方面得到广泛应用。智能水表、远程监控系统、数据分析平台等将成为水务企业的标配。
+                </p>
+                
+                <img src="https://s.coze.cn/image/vHPKLFefXKU/" 
+                     alt="智能水表安装现场" 
+                     class="w-full max-w-2xl mx-auto cursor-pointer"
+                     data-category="商业科技">
+                
+                <h3>3. 水资源管理精细化</h3>
+                <p>
+                    在水资源短缺和水环境治理的双重压力下，精细化的水资源管理将成为行业发展的重要方向。水资源调度优化、用水效率提升、水质安全保障等方面将得到进一步加强。
+                </p>
+                
+                <h3>4. 绿色低碳发展</h3>
+                <p>
+                    水务行业将更加注重绿色低碳发展理念，在污水处理、污泥处置、能源回收等方面推广应用节能环保技术，助力实现"双碳"目标。
+                </p>
+                
+                <h2>三、面临的挑战与机遇</h2>
+                <p>
+                    尽管水务行业发展前景广阔，但仍面临诸多挑战：
+                </p>
+                <ul class="list-disc pl-6">
+                    <li>技术创新能力有待提升</li>
+                    <li>资金投入不足</li>
+                    <li>人才短缺问题突出</li>
+                    <li>区域发展不平衡</li>
+                </ul>
+                
+                <p>
+                    同时，国家政策支持、市场需求增长、技术进步等因素也为水务行业带来了前所未有的发展机遇。
+                </p>
+                
+                <h2>四、政策建议</h2>
+                <p>
+                    为推动水务行业高质量发展，报告提出以下政策建议：
+                </p>
+                <ol class="list-decimal pl-6">
+                    <li>加大政策支持力度，完善行业标准体系</li>
+                    <li>鼓励技术创新，推动产学研深度融合</li>
+                    <li>拓宽融资渠道，吸引社会资本参与</li>
+                    <li>加强人才培养，提升行业整体素质</li>
+                    <li>推动跨区域合作，实现协同发展</li>
+                </ol>
+                
+                <p class="text-lg text-text-primary leading-relaxed mt-8">
+                    该报告的发布将为水务行业的健康发展提供重要指导，有助于相关企业和部门更好地把握行业发展方向，制定科学合理的发展战略。
+                </p>
+            </div>
+        </div>
+
+        <!-- 相关推荐区 -->
+        <div id="related-articles" class="bg-white rounded-lg shadow-card p-6">
+            <h3 class="text-xl font-semibold text-text-primary mb-4">相关资讯推荐</h3>
+            <div class="space-y-4">
+                <div class="flex items-start space-x-4 p-4 hover:bg-gray-50 rounded-lg cursor-pointer" id="related-article-1">
+                    <img src="https://s.coze.cn/image/nJAI8uP158w/" 
+                         alt="农村饮水工程" 
+                         class="w-20 h-14 object-cover rounded flex-shrink-0"
+                         data-category="商业科技">
+                    <div class="flex-1">
+                        <h4 class="font-medium text-text-primary hover:text-primary mb-1">
+                            农村饮水安全工程建设经验分享
+                        </h4>
+                        <div class="flex items-center space-x-4 text-sm text-text-secondary">
+                            <span>水务部官网</span>
+                            <span>2024-01-14 14:15</span>
+                            <span>432次阅读</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-4 p-4 hover:bg-gray-50 rounded-lg cursor-pointer" id="related-article-2">
+                    <img src="https://s.coze.cn/image/bBg1b0g_OQg/" 
+                         alt="数字化平台" 
+                         class="w-20 h-14 object-cover rounded flex-shrink-0"
+                         data-category="商业科技">
+                    <div class="flex-1">
+                        <h4 class="font-medium text-text-primary hover:text-primary mb-1">
+                            水资源管理数字化平台建设指南发布
+                        </h4>
+                        <div class="flex items-center space-x-4 text-sm text-text-secondary">
+                            <span>中国水网</span>
+                            <span>2024-01-14 11:30</span>
+                            <span>789次阅读</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-4 p-4 hover:bg-gray-50 rounded-lg cursor-pointer" id="related-article-3">
+                    <img src="https://s.coze.cn/image/IbjdvdUUn8Q/" 
+                         alt="智能水表" 
+                         class="w-20 h-14 object-cover rounded flex-shrink-0"
+                         data-category="商业科技">
+                    <div class="flex-1">
+                        <h4 class="font-medium text-text-primary hover:text-primary mb-1">
+                            新型智能水表技术突破，实现远程精准计量
+                        </h4>
+                        <div class="flex items-center space-x-4 text-sm text-text-secondary">
+                            <span>中国水网</span>
+                            <span>2024-01-15 08:45</span>
+                            <span>856次阅读</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 图片放大模态框 -->
+    <div id="image-modal" class="image-modal">
+        <img id="modal-image" src="" alt="">
+        <button id="close-modal" class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 解析URL参数的辅助函数
+            function getUrlParams() {
+                const params = {};
+                const queryString = window.location.search.substring(1);
+                const urlParams = new URLSearchParams(queryString);
+                
+                for(const [key, value] of urlParams.entries()) {
+                    params[key] = value;
+                }
+                return params;
+            }
+
+            // 获取URL参数
+            const params = getUrlParams();
+            
+            // 如果有article_id参数，可以根据ID加载对应的文章内容
+            if(params.article_id) {
+                console.log('加载文章ID:', params.article_id);
+                // 在实际应用中，这里会调用API获取对应ID的文章数据
+                // 目前使用模拟数据
+            }
+
+            // 侧边栏切换功能
+            document.querySelector('#sidebar-toggle').addEventListener('click', function() {
+                const sidebar = document.querySelector('#sidebar');
+                const mainContent = document.querySelector('#main-content');
+                const sidebarTexts = document.querySelectorAll('.sidebar-text');
+                
+                if (sidebar.classList.contains('sidebar-expanded')) {
+                    sidebar.classList.remove('sidebar-expanded');
+                    sidebar.classList.add('sidebar-collapsed');
+                    mainContent.classList.remove('ml-52');
+                    mainContent.classList.add('ml-12');
+                    sidebarTexts.forEach(text => text.style.display = 'none');
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                    sidebar.classList.add('sidebar-expanded');
+                    mainContent.classList.remove('ml-12');
+                    mainContent.classList.add('ml-52');
+                    sidebarTexts.forEach(text => text.style.display = 'block');
+                }
+            });
+
+            // 返回按钮
+            document.querySelector('#back-btn').addEventListener('click', function() {
+                window.location.href = 'P-INFO_LIST.html';
+            });
+
+            // 面包屑导航
+            document.querySelector('#breadcrumb-home').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-INFO_LIST.html';
+            });
+
+            document.querySelector('#breadcrumb-list').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-INFO_LIST.html';
+            });
+
+            // 收藏按钮
+            document.querySelector('#favorite-btn').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                const text = this.querySelector('span');
+                
+                if (icon.classList.contains('fas')) {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    text.textContent = '取消收藏';
+                    this.classList.remove('bg-warning', 'hover:bg-yellow-600');
+                    this.classList.add('bg-gray-500', 'hover:bg-gray-600');
+                } else {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    text.textContent = '收藏';
+                    this.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+                    this.classList.add('bg-warning', 'hover:bg-yellow-600');
+                }
+            });
+
+            // 分享按钮
+            document.querySelector('#share-btn').addEventListener('click', function() {
+                // 简单的分享功能
+                if (navigator.share) {
+                    navigator.share({
+                        title: document.querySelector('#page-title').textContent,
+                        text: '分享水脉通资讯',
+                        url: window.location.href
+                    });
+                } else {
+                    // 复制链接到剪贴板
+                    navigator.clipboard.writeText(window.location.href).then(function() {
+                        alert('链接已复制到剪贴板');
+                    });
+                }
+            });
+
+            // 图片放大功能
+            const images = document.querySelectorAll('.article-content img');
+            const modal = document.querySelector('#image-modal');
+            const modalImage = document.querySelector('#modal-image');
+            const closeModal = document.querySelector('#close-modal');
+
+            images.forEach(img => {
+                img.addEventListener('click', function() {
+                    modalImage.src = this.src;
+                    modalImage.alt = this.alt;
+                    modal.classList.add('show');
+                });
+            });
+
+            closeModal.addEventListener('click', function() {
+                modal.classList.remove('show');
+            });
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
+
+            // ESC键关闭模态框
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.classList.contains('show')) {
+                    modal.classList.remove('show');
+                }
+            });
+
+            // 相关资讯点击事件
+            document.querySelector('#related-article-1').addEventListener('click', function() {
+                window.location.href = 'P-INFO_DETAIL.html?article_id=article1';
+            });
+
+            document.querySelector('#related-article-2').addEventListener('click', function() {
+                window.location.href = 'P-INFO_DETAIL.html?article_id=article2';
+            });
+
+            document.querySelector('#related-article-3').addEventListener('click', function() {
+                window.location.href = 'P-INFO_DETAIL.html?article_id=article3';
+            });
+
+            // 全局搜索功能
+            document.querySelector('#global-search').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    const keyword = this.value.trim();
+                    if (keyword) {
+                        window.location.href = `P-INFO_LIST.html?keyword=${encodeURIComponent(keyword)}`;
+                    }
+                }
+            });
+
+            // 左侧菜单导航
+            document.querySelector('#nav-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-INFO_LIST.html';
+            });
+
+            document.querySelector('#nav-news').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-INFO_LIST.html';
+            });
+
+            document.querySelector('#nav-categories').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_CATEGORY.html';
+            });
+
+            document.querySelector('#nav-sources').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DATA_SOURCE.html';
+            });
+
+            document.querySelector('#nav-ai-rules').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_AI_RULES.html';
+            });
+
+            document.querySelector('#nav-users').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_USER_PERMISSION.html';
+            });
+
+            document.querySelector('#nav-api').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_API_MANAGE.html';
+            });
+        });
+    </script>
+</body>
+</html>

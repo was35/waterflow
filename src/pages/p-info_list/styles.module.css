@@ -1,0 +1,41 @@
+
+
+.pageWrapper {
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.sidebarCollapsed {
+  width: 48px;
+}
+
+.sidebarExpanded {
+  width: 200px;
+}
+
+.tableRowHover:hover {
+  background-color: #f9fafb;
+}
+
+.navItemActive {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border-right: 3px solid #2563eb;
+}
+
+.searchInputFocus:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filterDropdown {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.filterDropdown.show {
+  max-height: 300px;
+}
+

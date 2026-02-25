@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水脉通 - 水务资讯</title>
+    <script src="https://unpkg.byted-static.com/coze/space_ppt_lib/1.0.3-alpha.12/lib/tailwindcss.js"></script>
+    <script src="https://unpkg.byted-static.com/fortawesome/fontawesome-free/6.7.2/js/all.min.js" data-auto-replace-svg="nest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#1e40af',
+                        tertiary: '#3b82f6',
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#06b6d4',
+                        'text-primary': '#1f2937',
+                        'text-secondary': '#6b7280',
+                        'bg-light': '#f8fafc',
+                        'border-light': '#e5e7eb'
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .sidebar-collapsed {
+            width: 48px;
+        }
+        
+        .sidebar-expanded {
+            width: 200px;
+        }
+        
+        .table-row-hover:hover {
+            background-color: #f9fafb;
+        }
+        
+        .nav-item-active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+        }
+        
+        .search-input-focus:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .filter-dropdown {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .filter-dropdown.show {
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body class="bg-bg-light min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header id="top-navbar" class="fixed top-0 left-0 right-0 bg-white border-b border-border-light h-16 z-50">
+        <div class="flex items-center justify-between h-full px-6">
+            <!-- 左侧：Logo和网站名称 -->
+            <div id="navbar-left" class="flex items-center space-x-4">
+                <button id="sidebar-toggle" class="p-2 rounded-lg hover:bg-gray-100 lg:hidden">
+                    <i class="fas fa-bars text-gray-600"></i>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div id="logo" class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-tint text-white text-sm"></i>
+                    </div>
+                    <h1 id="site-title" class="text-xl font-semibold text-text-primary hidden sm:block">水脉通</h1>
+                </div>
+            </div>
+            
+            <!-- 中间：全局搜索框 -->
+            <div id="navbar-center" class="flex-1 max-w-md mx-8 hidden md:block">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="global-search" 
+                        placeholder="搜索水务资讯..." 
+                        class="w-full pl-10 pr-4 py-2 border border-border-light rounded-lg search-input-focus"
+                    >
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary"></i>
+                </div>
+            </div>
+            
+            <!-- 右侧：用户操作区 -->
+            <div id="navbar-right" class="flex items-center space-x-4">
+                <button id="notification-btn" class="p-2 rounded-lg hover:bg-gray-100 relative">
+                    <i class="fas fa-bell text-gray-600"></i>
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-danger rounded-full"></span>
+                </button>
+                <div id="user-menu" class="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 rounded-lg p-2">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <span class="text-sm text-text-primary hidden sm:block">管理员</span>
+                    <i class="fas fa-chevron-down text-xs text-text-secondary"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 左侧菜单 -->
+    <aside id="sidebar" class="fixed left-0 top-16 bottom-0 bg-white border-r border-border-light sidebar-expanded transition-all duration-300 z-40">
+        <nav id="sidebar-nav" class="p-4 space-y-2">
+            <a href="#" id="nav-dashboard" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-home w-5"></i>
+                <span class="sidebar-text">首页</span>
+            </a>
+            <a href="#" id="nav-news" class="flex items-center space-x-3 px-3 py-2 rounded-lg nav-item-active">
+                <i class="fas fa-newspaper w-5"></i>
+                <span class="sidebar-text">资讯列表</span>
+            </a>
+            <a href="#" id="nav-categories" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-folder w-5"></i>
+                <span class="sidebar-text">分类管理</span>
+            </a>
+            <a href="#" id="nav-sources" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-rss w-5"></i>
+                <span class="sidebar-text">数据源</span>
+            </a>
+            <a href="#" id="nav-ai-rules" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-brain w-5"></i>
+                <span class="sidebar-text">AI规则</span>
+            </a>
+            <a href="#" id="nav-users" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-users w-5"></i>
+                <span class="sidebar-text">用户管理</span>
+            </a>
+            <a href="#" id="nav-api" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-text-secondary hover:bg-gray-100">
+                <i class="fas fa-code w-5"></i>
+                <span class="sidebar-text">API管理</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main id="main-content" class="ml-52 mt-16 p-6 transition-all duration-300">
+        <!-- 页面头部 -->
+        <div id="page-header" class="mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 id="page-title" class="text-2xl font-semibold text-text-primary">水务资讯</h2>
+                    <nav id="breadcrumb" class="mt-1">
+                        <ol class="flex items-center space-x-2 text-sm text-text-secondary">
+                            <li><a href="#" id="breadcrumb-home" class="hover:text-primary">首页</a></li>
+                            <li><i class="fas fa-chevron-right text-xs"></i></li>
+                            <li class="text-text-primary">资讯列表</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div id="page-actions" class="flex items-center space-x-3">
+                    <button id="refresh-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                        <i class="fas fa-sync-alt text-sm"></i>
+                        <span>刷新</span>
+                    </button>
+                    <button id="export-btn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary flex items-center space-x-2">
+                        <i class="fas fa-download text-sm"></i>
+                        <span>导出</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工具栏区域 -->
+        <div id="toolbar" class="bg-white rounded-lg shadow-card p-4 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                <!-- 搜索框 -->
+                <div id="search-section" class="flex-1 max-w-md">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="keyword-search" 
+                            placeholder="搜索资讯标题、摘要..." 
+                            class="w-full pl-10 pr-4 py-2 border border-border-light rounded-lg search-input-focus"
+                        >
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary"></i>
+                    </div>
+                </div>
+                
+                <!-- 筛选条件 -->
+                <div id="filter-section" class="flex flex-wrap items-center gap-3">
+                    <!-- 分类筛选 -->
+                    <div class="relative">
+                        <button id="category-filter-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                            <span>分类</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="category-dropdown" class="absolute top-full left-0 mt-1 w-48 bg-white border border-border-light rounded-lg shadow-lg filter-dropdown">
+                            <div class="p-2">
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" class="rounded category-checkbox" value="policy">
+                                    <span>水务政策</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" class="rounded category-checkbox" value="technology">
+                                    <span>技术创新</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" class="rounded category-checkbox" value="market">
+                                    <span>市场动态</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" class="rounded category-checkbox" value="case">
+                                    <span>案例研究</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 时间范围筛选 -->
+                    <div class="relative">
+                        <button id="time-filter-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                            <span>时间范围</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="time-dropdown" class="absolute top-full left-0 mt-1 w-48 bg-white border border-border-light rounded-lg shadow-lg filter-dropdown">
+                            <div class="p-2">
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="time-range" class="text-primary time-radio" value="today">
+                                    <span>今天</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="time-range" class="text-primary time-radio" value="week">
+                                    <span>近一周</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="time-range" class="text-primary time-radio" value="month" checked>
+                                    <span>近一月</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="time-range" class="text-primary time-radio" value="quarter">
+                                    <span>近三月</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 来源筛选 -->
+                    <div class="relative">
+                        <button id="source-filter-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                            <span>来源</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="source-dropdown" class="absolute top-full left-0 mt-1 w-48 bg-white border border-border-light rounded-lg shadow-lg filter-dropdown">
+                            <div class="p-2">
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" class="rounded source-checkbox" value="mwr">
+                                    <span>水务部官网</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" class="rounded source-checkbox" value="chinawater">
+                                    <span>中国水网</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" class="rounded source-checkbox" value="smartwater">
+                                    <span>智慧水务</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AI质量评分筛选 -->
+                    <div class="relative">
+                        <button id="ai-score-filter-btn" class="px-4 py-2 border border-border-light rounded-lg hover:bg-gray-50 flex items-center space-x-2">
+                            <span>AI评分</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="ai-score-dropdown" class="absolute top-full left-0 mt-1 w-48 bg-white border border-border-light rounded-lg shadow-lg filter-dropdown">
+                            <div class="p-2">
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="ai-score" class="text-primary ai-score-radio" value="90+">
+                                    <span>90分以上</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="ai-score" class="text-primary ai-score-radio" value="80-90">
+                                    <span>80-90分</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="ai-score" class="text-primary ai-score-radio" value="70-80" checked>
+                                    <span>70-80分</span>
+                                </label>
+                                <label class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="radio" name="ai-score" class="text-primary ai-score-radio" value="any">
+                                    <span>不限</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 排序选项 -->
+                    <select id="sort-select" class="px-4 py-2 border border-border-light rounded-lg focus:outline-none focus:border-primary">
+                        <option value="time-desc">发布时间 ↓</option>
+                        <option value="time-asc">发布时间 ↑</option>
+                        <option value="views-desc">阅读量 ↓</option>
+                        <option value="views-asc">阅读量 ↑</option>
+                        <option value="ai-score-desc">AI评分 ↓</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容展示区域 -->
+        <div id="content-area" class="bg-white rounded-lg shadow-card overflow-hidden mb-6">
+            <!-- 表格头部 -->
+            <div id="table-header" class="px-6 py-4 border-b border-border-light bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" id="select-all" class="rounded">
+                            <span class="text-sm text-text-secondary">全选</span>
+                        </label>
+                        <span class="text-sm text-text-secondary">共 <span id="total-count" class="font-medium text-text-primary">1,248</span> 条资讯</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="batch-delete" class="px-3 py-1 text-sm text-danger hover:bg-red-50 rounded disabled:opacity-50" disabled>
+                            <i class="fas fa-trash mr-1"></i>删除
+                        </button>
+                        <button id="batch-mark" class="px-3 py-1 text-sm text-primary hover:bg-blue-50 rounded disabled:opacity-50" disabled>
+                            <i class="fas fa-star mr-1"></i>收藏
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 表格内容 -->
+            <div id="table-content" class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-border-light">
+                        <tr>
+                            <th class="w-12 px-6 py-3 text-left">
+                                <input type="checkbox" class="rounded">
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                标题 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-32 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                来源 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-40 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                发布时间 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-80 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                                摘要
+                            </th>
+                            <th class="w-20 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                                图片
+                            </th>
+                            <th class="w-20 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary">
+                                阅读量 <i class="fas fa-sort ml-1"></i>
+                            </th>
+                            <th class="w-24 px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                                操作
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="news-table-body" class="bg-white divide-y divide-border-light">
+                        <!-- 资讯行 1 -->
+                        <tr class="table-row-hover">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded row-checkbox" data-id="article1">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary hover:text-primary cursor-pointer article-title" data-id="article1">
+                                            2024年水务行业发展趋势分析报告正式发布
+                                        </h3>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 category-tag">
+                                                水务政策
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 ai-score-tag">
+                                                AI评分: 92
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary source-tag">
+                                水务部官网
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary publish-time">
+                                2024-01-15 09:30
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary line-clamp-2">
+                                报告指出，2024年水务行业将迎来数字化转型的关键期，智慧水务、水资源管理等领域将成为发展重点...
+                            </td>
+                            <td class="px-6 py-4">
+                                <img src="https://s.coze.cn/image/kBc4zp204cc/" 
+                                     alt="水务报告封面" 
+                                     class="w-12 h-8 object-cover rounded"
+                                     data-category="商业科技">
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary views-count">
+                                1,234
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="text-text-secondary hover:text-warning favorite-btn" title="收藏" data-id="article1">
+                                        <i class="fas fa-star text-sm"></i>
+                                    </button>
+                                    <button class="text-text-secondary hover:text-primary share-btn" title="分享" data-id="article1">
+                                        <i class="fas fa-share text-sm"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- 资讯行 2 -->
+                        <tr class="table-row-hover">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded row-checkbox" data-id="article2">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary hover:text-primary cursor-pointer article-title" data-id="article2">
+                                            新型智能水表技术突破，实现远程精准计量
+                                        </h3>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 category-tag">
+                                                技术创新
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 ai-score-tag">
+                                                AI评分: 88
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary source-tag">
+                                中国水网
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary publish-time">
+                                2024-01-15 08:45
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary line-clamp-2">
+                                某科技公司成功研发出第三代智能水表，采用物联网技术，可实现实时数据传输和智能分析功能...
+                            </td>
+                            <td class="px-6 py-4">
+                                <img src="https://s.coze.cn/image/W6PTcwf1FtE/" 
+                                     alt="智能水表" 
+                                     class="w-12 h-8 object-cover rounded"
+                                     data-category="商业科技">
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary views-count">
+                                856
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="text-text-secondary hover:text-warning favorite-btn" title="收藏" data-id="article2">
+                                        <i class="fas fa-star text-sm"></i>
+                                    </button>
+                                    <button class="text-text-secondary hover:text-primary share-btn" title="分享" data-id="article2">
+                                        <i class="fas fa-share text-sm"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- 资讯行 3 -->
+                        <tr class="table-row-hover">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded row-checkbox" data-id="article3">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary hover:text-primary cursor-pointer article-title" data-id="article3">
+                                            城市污水处理厂智能化改造项目启动
+                                        </h3>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800 category-tag">
+                                                市场动态
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800 ai-score-tag">
+                                                AI评分: 76
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary source-tag">
+                                智慧水务
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary publish-time">
+                                2024-01-14 16:20
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary line-clamp-2">
+                                某市投资5亿元启动污水处理厂智能化改造工程，预计将大幅提升处理效率和水质监测水平...
+                            </td>
+                            <td class="px-6 py-4">
+                                <img src="https://s.coze.cn/image/BOaWq_AXJV0/" 
+                                     alt="污水处理厂" 
+                                     class="w-12 h-8 object-cover rounded"
+                                     data-category="商业科技">
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary views-count">
+                                642
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="text-text-secondary hover:text-warning favorite-btn" title="收藏" data-id="article3">
+                                        <i class="fas fa-star text-sm"></i>
+                                    </button>
+                                    <button class="text-text-secondary hover:text-primary share-btn" title="分享" data-id="article3">
+                                        <i class="fas fa-share text-sm"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- 资讯行 4 -->
+                        <tr class="table-row-hover">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded row-checkbox" data-id="article4">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary hover:text-primary cursor-pointer article-title" data-id="article4">
+                                            农村饮水安全工程建设经验分享
+                                        </h3>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-teal-100 text-teal-800 category-tag">
+                                                案例研究
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 ai-score-tag">
+                                                AI评分: 85
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary source-tag">
+                                水务部官网
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary publish-time">
+                                2024-01-14 14:15
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary line-clamp-2">
+                                某省在农村饮水安全工程建设中取得显著成效，通过创新管理模式和技术应用，解决了数十万人的饮水问题...
+                            </td>
+                            <td class="px-6 py-4">
+                                <img src="https://s.coze.cn/image/TCJEacfJ2I8/" 
+                                     alt="农村饮水工程" 
+                                     class="w-12 h-8 object-cover rounded"
+                                     data-category="商业科技">
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary views-count">
+                                432
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="text-text-secondary hover:text-warning favorite-btn" title="收藏" data-id="article4">
+                                        <i class="fas fa-star text-sm"></i>
+                                    </button>
+                                    <button class="text-text-secondary hover:text-primary share-btn" title="分享" data-id="article4">
+                                        <i class="fas fa-share text-sm"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- 资讯行 5 -->
+                        <tr class="table-row-hover">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" class="rounded row-checkbox" data-id="article5">
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-text-primary hover:text-primary cursor-pointer article-title" data-id="article5">
+                                            水资源管理数字化平台建设指南发布
+                                        </h3>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 category-tag">
+                                                水务政策
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 ai-score-tag">
+                                                AI评分: 90
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary source-tag">
+                                中国水网
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary publish-time">
+                                2024-01-14 11:30
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary line-clamp-2">
+                                国家水利部发布水资源管理数字化平台建设指南，为各地水务部门提供标准化的建设框架和技术规范...
+                            </td>
+                            <td class="px-6 py-4">
+                                <img src="https://s.coze.cn/image/z5BUuDgD7PQ/" 
+                                     alt="数字化平台" 
+                                     class="w-12 h-8 object-cover rounded"
+                                     data-category="商业科技">
+                            </td>
+                            <td class="px-6 py-4 text-sm text-text-secondary views-count">
+                                789
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-2">
+                                    <button class="text-text-secondary hover:text-warning favorite-btn" title="收藏" data-id="article5">
+                                        <i class="fas fa-star text-sm"></i>
+                                    </button>
+                                    <button class="text-text-secondary hover:text-primary share-btn" title="分享" data-id="article5">
+                                        <i class="fas fa-share text-sm"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 分页区域 -->
+        <div id="pagination-area" class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <span class="text-sm text-text-secondary">
+                    显示第 <span id="page-range" class="font-medium">1-10</span> 条，共 <span id="total-items" class="font-medium">1,248</span> 条
+                </span>
+                <select id="page-size-select" class="px-3 py-1 border border-border-light rounded text-sm focus:outline-none focus:border-primary">
+                    <option value="10">10条/页</option>
+                    <option value="20">20条/页</option>
+                    <option value="50">50条/页</option>
+                    <option value="100">100条/页</option>
+                </select>
+            </div>
+            
+            <div id="pagination-controls" class="flex items-center space-x-2">
+                <button id="prev-page" class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50 disabled:opacity-50" disabled>
+                    <i class="fas fa-chevron-left mr-1"></i>上一页
+                </button>
+                
+                <div id="page-numbers" class="flex items-center space-x-1">
+                    <button class="px-3 py-1 bg-primary text-white rounded text-sm page-number" data-page="1">1</button>
+                    <button class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50 page-number" data-page="2">2</button>
+                    <button class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50 page-number" data-page="3">3</button>
+                    <span class="px-2 text-text-secondary">...</span>
+                    <button class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50 page-number" data-page="125">125</button>
+                </div>
+                
+                <button id="next-page" class="px-3 py-1 border border-border-light rounded text-sm hover:bg-gray-50">
+                    下一页<i class="fas fa-chevron-right ml-1"></i>
+                </button>
+                
+                <div class="flex items-center space-x-2 ml-4">
+                    <span class="text-sm text-text-secondary">跳转到</span>
+                    <input type="number" id="goto-page" min="1" max="125" class="w-16 px-2 py-1 border border-border-light rounded text-sm text-center focus:outline-none focus:border-primary">
+                    <span class="text-sm text-text-secondary">页</span>
+                    <button id="goto-btn" class="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-secondary">
+                        跳转
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 侧边栏切换功能
+            document.querySelector('#sidebar-toggle').addEventListener('click', function() {
+                const sidebar = document.querySelector('#sidebar');
+                const mainContent = document.querySelector('#main-content');
+                const sidebarTexts = document.querySelectorAll('.sidebar-text');
+                
+                if (sidebar.classList.contains('sidebar-expanded')) {
+                    sidebar.classList.remove('sidebar-expanded');
+                    sidebar.classList.add('sidebar-collapsed');
+                    mainContent.classList.remove('ml-52');
+                    mainContent.classList.add('ml-12');
+                    sidebarTexts.forEach(text => text.style.display = 'none');
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                    sidebar.classList.add('sidebar-expanded');
+                    mainContent.classList.remove('ml-12');
+                    mainContent.classList.add('ml-52');
+                    sidebarTexts.forEach(text => text.style.display = 'block');
+                }
+            });
+
+            // 筛选下拉菜单功能
+            const filterButtons = ['category', 'time', 'source', 'ai-score'];
+            
+            filterButtons.forEach(type => {
+                const button = document.querySelector(`#${type}-filter-btn`);
+                const dropdown = document.querySelector(`#${type}-dropdown`);
+                
+                button.addEventListener('click', function() {
+                    // 关闭其他下拉菜单
+                    filterButtons.forEach(otherType => {
+                        if (otherType !== type) {
+                            document.querySelector(`#${otherType}-dropdown`).classList.remove('show');
+                        }
+                    });
+                    
+                    // 切换当前下拉菜单
+                    dropdown.classList.toggle('show');
+                });
+            });
+
+            // 点击外部关闭下拉菜单
+            document.addEventListener('click', function(event) {
+                filterButtons.forEach(type => {
+                    const button = document.querySelector(`#${type}-filter-btn`);
+                    const dropdown = document.querySelector(`#${type}-dropdown`);
+                    
+                    if (!button.contains(event.target) && !dropdown.contains(event.target)) {
+                        dropdown.classList.remove('show');
+                    }
+                });
+            });
+
+            // 全选功能
+            document.querySelector('#select-all').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.row-checkbox');
+                const batchButtons = document.querySelectorAll('#batch-delete, #batch-mark');
+                
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                
+                // 更新批量操作按钮状态
+                const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+                batchButtons.forEach(button => {
+                    button.disabled = checkedCount === 0;
+                });
+            });
+
+            // 监听单个复选框变化
+            document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const totalCheckboxes = document.querySelectorAll('.row-checkbox').length;
+                    const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked').length;
+                    const selectAllCheckbox = document.querySelector('#select-all');
+                    const batchButtons = document.querySelectorAll('#batch-delete, #batch-mark');
+                    
+                    // 更新全选复选框状态
+                    selectAllCheckbox.checked = checkedCheckboxes === totalCheckboxes;
+                    selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
+                    
+                    // 更新批量操作按钮状态
+                    batchButtons.forEach(button => {
+                        button.disabled = checkedCheckboxes === 0;
+                    });
+                });
+            });
+
+            // 资讯标题点击事件
+            document.querySelectorAll('.article-title').forEach(title => {
+                title.addEventListener('click', function() {
+                    const articleId = this.dataset.id;
+                    window.location.href = `P-INFO_DETAIL.html?articleId=${articleId}`;
+                });
+            });
+
+            // 搜索功能
+            document.querySelector('#keyword-search').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    const keyword = this.value;
+                    console.log('搜索关键词:', keyword);
+                    // 这里应该调用搜索API并刷新列表
+                }
+            });
+
+            // 全局搜索功能
+            document.querySelector('#global-search').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    const keyword = this.value;
+                    console.log('全局搜索:', keyword);
+                    // 这里应该调用全局搜索API并刷新列表
+                }
+            });
+
+            // 筛选功能
+            function applyFilters() {
+                const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => cb.value);
+                const selectedTimeRange = document.querySelector('.time-radio:checked').value;
+                const selectedSources = Array.from(document.querySelectorAll('.source-checkbox:checked')).map(cb => cb.value);
+                const selectedAIScore = document.querySelector('.ai-score-radio:checked').value;
+                
+                console.log('应用筛选条件:', {
+                    categories: selectedCategories,
+                    timeRange: selectedTimeRange,
+                    sources: selectedSources,
+                    aiScore: selectedAIScore
+                });
+                // 这里应该调用筛选API并刷新列表
+            }
+
+            // 监听筛选条件变化
+            document.querySelectorAll('.category-checkbox, .time-radio, .source-checkbox, .ai-score-radio').forEach(element => {
+                element.addEventListener('change', applyFilters);
+            });
+
+            // 排序功能
+            document.querySelector('#sort-select').addEventListener('change', function() {
+                const sortValue = this.value;
+                console.log('排序方式:', sortValue);
+                // 这里应该调用排序API并刷新列表
+            });
+
+            // 收藏功能
+            document.querySelectorAll('.favorite-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const articleId = this.dataset.id;
+                    console.log('收藏资讯:', articleId);
+                    // 这里应该调用收藏API
+                });
+            });
+
+            // 分享功能
+            document.querySelectorAll('.share-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const articleId = this.dataset.id;
+                    console.log('分享资讯:', articleId);
+                    // 这里应该调用分享API或打开分享弹窗
+                });
+            });
+
+            // 批量删除功能
+            document.querySelector('#batch-delete').addEventListener('click', function() {
+                const selectedArticles = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.id);
+                if (selectedArticles.length > 0) {
+                    if (confirm(`确定要删除选中的 ${selectedArticles.length} 条资讯吗？`)) {
+                        console.log('批量删除:', selectedArticles);
+                        // 这里应该调用批量删除API
+                    }
+                }
+            });
+
+            // 批量收藏功能
+            document.querySelector('#batch-mark').addEventListener('click', function() {
+                const selectedArticles = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.id);
+                if (selectedArticles.length > 0) {
+                    console.log('批量收藏:', selectedArticles);
+                    // 这里应该调用批量收藏API
+                }
+            });
+
+            // 刷新功能
+            document.querySelector('#refresh-btn').addEventListener('click', function() {
+                console.log('刷新资讯列表');
+                // 这里应该调用刷新API
+            });
+
+            // 导出功能
+            document.querySelector('#export-btn').addEventListener('click', function() {
+                console.log('导出资讯');
+                // 这里应该调用导出API
+            });
+
+            // 分页功能
+            document.querySelectorAll('.page-number').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const pageNumber = parseInt(this.dataset.page);
+                    console.log('跳转到页面:', pageNumber);
+                    // 这里应该调用分页API
+                });
+            });
+
+            // 上一页功能
+            document.querySelector('#prev-page').addEventListener('click', function() {
+                if (!this.disabled) {
+                    console.log('上一页');
+                    // 这里应该调用上一页API
+                }
+            });
+
+            // 下一页功能
+            document.querySelector('#next-page').addEventListener('click', function() {
+                console.log('下一页');
+                // 这里应该调用下一页API
+            });
+
+            // 跳转到指定页面
+            document.querySelector('#goto-btn').addEventListener('click', function() {
+                const pageNumber = parseInt(document.querySelector('#goto-page').value);
+                const maxPage = 125;
+                if (pageNumber && pageNumber >= 1 && pageNumber <= maxPage) {
+                    console.log('跳转到页面:', pageNumber);
+                    // 这里应该调用跳转API
+                } else {
+                    alert(`请输入1到${maxPage}之间的页码`);
+                }
+            });
+
+            // 页面大小改变
+            document.querySelector('#page-size-select').addEventListener('change', function() {
+                const pageSize = parseInt(this.value);
+                console.log('每页显示:', pageSize);
+                // 这里应该调用页面大小改变API
+            });
+
+            // 面包屑导航
+            document.querySelector('#breadcrumb-home').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-INFO_LIST.html';
+            });
+
+            // 左侧菜单导航
+            document.querySelector('#nav-dashboard').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-INFO_LIST.html';
+            });
+
+            document.querySelector('#nav-news').addEventListener('click', function(e) {
+                e.preventDefault();
+                // 已在资讯列表页，无需操作
+            });
+
+            document.querySelector('#nav-categories').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_CATEGORY.html';
+            });
+
+            document.querySelector('#nav-sources').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_DATA_SOURCE.html';
+            });
+
+            document.querySelector('#nav-ai-rules').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_AI_RULES.html';
+            });
+
+            document.querySelector('#nav-users').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_USER_PERMISSION.html';
+            });
+
+            document.querySelector('#nav-api').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = 'P-ADMIN_API_MANAGE.html';
+            });
+        });
+    </script>
+</body>
+</html>

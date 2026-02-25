@@ -1,0 +1,55 @@
+
+
+.pageWrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.loginInputFocus:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.loginButtonHover:hover {
+  background-color: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px -3px rgba(37, 99, 235, 0.3);
+}
+
+.formGroup {
+  position: relative;
+}
+
+.formGroup input {
+  padding-left: 40px;
+}
+
+.formGroup i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+}
+
+.errorMessage {
+  display: none;
+}
+
+.errorMessage.show {
+  display: block;
+}
+
+.loadingSpinner {
+  display: none;
+}
+
+.loadingSpinner.show {
+  display: inline-block;
+}
+
