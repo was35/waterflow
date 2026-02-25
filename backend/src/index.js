@@ -13,7 +13,12 @@ import userRoutes from './routes/users.js';
 import apiManageRoutes from './routes/apiManage.js';
 import settingsRoutes from './routes/settings.js';
 import authRoutes from './routes/auth.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { startScheduledFetch } from './services/fetchService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,8 +44,15 @@ app.use((err, req, res, next) => {
   errorHandler(err, req, res, next);
 });
 
+// 静态资源文件 - 优先于 404
+app.use(express.static(path.join(__dirname, '../dist')));
+
 app.use((req, res) => {
-  res.status(404).json({ error: '接口不存在' });
+  if (req.accepts('html')) {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+  } else {
+    res.status(404).json({ error: '接口不存在' });
+  }
 });
 
 app.listen(PORT, () => {
