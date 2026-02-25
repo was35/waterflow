@@ -9,7 +9,7 @@ RUN npm install
 
 # 复制源码并构建
 COPY . .
-RUN npm run build
+RUN npx vite build
 
 # Stage 2: Backend
 FROM node:20-alpine
